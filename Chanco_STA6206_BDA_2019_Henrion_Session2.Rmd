@@ -1,0 +1,1170 @@
+---
+title: "STA6206 - Bayesian Data Analysis - Session 2"
+author: "Marc Henrion"
+date: "9 September 2019"
+header-includes:
+   - \usepackage{amsmath}
+output:
+  powerpoint_presentation:
+    reference_doc: MlwChanco_Template.pptx
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = TRUE, fig.width=16, fig.height=9, dpi=300, highlight=T)
+
+require(tidyverse)
+require(knitr)
+require(gridExtra)
+require(kableExtra)
+require(gridExtra)
+```
+
+
+# Preliminaries
+
+* These notes were written in `R markdown`.
+
+* All examples / code in these notes is `R` and a combination of STAN / JAGS / BUGS for Bayesian model specification.
+
+* GitHub repository - will contain all course materials by the end of the week:
+
+  <https://github.com/gitMarcH/Chanco_STA6206>
+
+#
+
+## Session 2: Bayesian inference, prior distributions
+
+$$\,$$
+
+Some references for Bayesian statistics / data analysis are:
+
+1. Hoff, P.D. (2009). "*A First Course in Bayesian Statistical Methods*." Springer.
+
+2. Gelman, A., Carlin, J.B., Stern, H.S., Dunson, D.B., Vehtari, A., Rubin, D.B. (2014). "*Bayesian Data Analysis*". 3^rd^ ed. CRC Press.
+
+3. Ramoni, M., Sebastiani, P. (2007), 'Bayesian Methods', in Berthold, M., Hand, D.J. (eds.). "*Intelligent Data Analysis*", 2^nd^ ed., Springer, pp.131-168
+
+4. Stone, J.V. (2013). "*Bayes' Rule: A Tutorial Introduction to Bayesian Analysis*". Sebtel Press.
+
+
+# Notation
+
+* $X, Y, Z$ - random variables
+
+* $x, y, z$ - measured / observed values
+
+* $\bar{X}$, $\bar{Y}, \bar{Z}$ - sample mean estimators for X, Y, Z
+
+* $\bar{x}$, $\bar{y}, \bar{z}$ - sample mean estimates of X, Y, Z
+
+* $\hat{T}$, $\hat{t}$ - given a statistic T, estimator and estimate of T
+
+* $P(A)$ - probability of an event A occuring
+
+* $f_X(.)$, $f_Y(.), f_Z(.)$ - probability mass / density functions of X, Y, Z; sometimes $p_X(.)$ etc. rather than $f_X(.)$
+
+* p(.) - used as a shorthand notation for pmfs / pdfs if the use of this is unambiguous (i.e. it is clear which is the random variable) 
+
+* $X\sim F$ - X distributed according to distribution function F
+
+* $E[X]$, $E[Y]$, $E[Z]$, $E[T]$ - the expectation of X, Y, Z, T respectively
+
+
+#
+
+$$\,$$
+$$\,$$
+
+**BAYESIAN INFERENCE: one-parameter models**
+
+# Bayesian inference
+
+Let's start with an example (taken from Stone, J.V. (2013). "Bayes' Rule: A Tutorial Introduction to Bayesian Analysis.", Sebtel Press.).
+$$\,$$
+
+You wake up one morning with spots all over your face. You are worried and go to the doctor. The doctor tells you that $90\%$ of people with smallpox present with spots on their face.
+
+You are (naturally) very worried now as smallpox is a very serious disease (also: it has been eradicated since the 1980s).
+
+However, more useful to know would be the probability of having smallpox.
+
+
+# Bayesian inference
+
+Suppose doctors collect data on people presenting with smallpox and chickenpox and the symptoms they present.
+
+Based on this, the doctor will calculate
+
+$$p(\mbox{spots }|\mbox{ smallpox}) = 0.9$$
+and
+
+$$p(\mbox{spots }|\mbox{ chickenpox}) = 0.8$$
+These two expression are called the *likelihood* of smallpox / chickenpox and are obtained from the *sampling model* that we assume for the data.
+
+The maximum likelihood estimate for the disease based on these two is smallpox.
+
+
+# Bayesian inference
+
+However, smallpox is very rare and chickenpox more common.
+
+The doctor also has the recorded prevalences for these two diseases; this is the *prior* knowledge:
+
+$$p(\mbox{smallpox})=0.001$$
+and
+
+$$p(\mbox{chickenpox})=0.1$$
+
+Further, the overall proportion of people with spots on their faces in the population, called the *marginal likelihood* or the *evidence*, is given by
+
+$$p(\mbox{spots})=0.081$$
+
+
+# Bayesian inference
+
+Using Bayes' Rule:
+
+$$p(\mbox{smallpox }|\mbox{ spots}) = \frac{p(\mbox{spots }|\mbox{ smallpox})\,p(\mbox{smallpox}) }{p(\mbox{spots})} = \frac{0.9\cdot0.001}{0.081} = 0.0111$$
+and
+$$p(\mbox{chickenpox }|\mbox{ spots}) = \frac{p(\mbox{spots }|\mbox{ chickenpox})\,p(\mbox{chickenpox}) }{p(\mbox{spots})} = \frac{0.8\cdot0.1}{0.081} = 0.9877$$
+While we cannot be certain, it is very likely that you have chickenpox, not smallpox and so you can relax.
+
+# Bayesian inference
+
+![Reproduced from Stone, J.V. (2013). "Bayes' Rule: A Tutorial Introduction to Bayesian Analysis". Sebtel Press.](images/bayesSmallpox_stone2013.PNG)
+
+
+# Bayesian inference
+
+What we have done here, is we have updated a prior belief after observing some data.
+
+Specifically:
+$$\mbox{hypothesis = disease is smallpox / chickenpox}$$
+$$\mbox{data = symptoms of spots on face}$$
+
+Bayesian inference:
+$$p(\mbox{hypothesis | data}) = \frac{p(\mbox{data|hypothesis})\,p(\mbox{hypothesis})}{p(\mbox{data})}$$
+or:
+$$\mbox{posterior}=\frac{\mbox{likelihood}\times\mbox{prior}}{\mbox{evidence}}$$
+
+# Bayesian inference
+
+Often, the hypothesis can be framed as a statement about a parameter of interest $\theta$. Writing $y$ for the data, we can write quite generally:
+
+$$\,$$
+
+$$p(\theta|y)=\frac{p(y|\theta)\,p(\theta)}{p(y)}$$
+This leads to the probability density version of Bayes' Rule, which underlies all of Bayesian statistics:
+
+$$\,$$
+
+$$f_{\Theta|\mathbf{Y}=\mathbf{y}}(\theta|\mathbf{y})=\frac{f_\mathbf{Y}(\mathbf{y}|\theta)\,f_\Theta(\theta)}{f_\mathbf{Y}(\mathbf{y})}=\frac{f_\mathbf{Y}(\mathbf{y}|\theta)\,f_\Theta(\theta)}{\int_{\Omega_\theta} f_{\mathbf{Y}|\Theta=\theta}(\mathbf{y}|\theta)\,f_\Theta(\theta)d\theta}$$
+
+
+# Bayesian inference
+
+It is important to note that the denominator (the evidence) is fixed for a given dataset, i.e. it is constant. It normalises the posterior distrbiution so that it sums (pmf) / integrates (pdf) to 1 -- this is a requirement for the posterior to be a valid probability distribution.
+
+$$\,$$
+
+This means that
+
+$$p(\theta|y)\propto p(y|\theta)\,p(\theta)$$
+or put differenty
+
+$$\mbox{posterior}\propto\mbox{likelihood}\times\mbox{prior}$$
+
+
+$$\,$$
+
+In Bayesian statistics, both data variables and distribution parameters are considered to be random.
+
+# Example
+
+$$\,$$
+**Beta prior, binomial sampling model**
+
+
+# Example (cont'd)
+
+Suppose we interested in estimating the probability $\pi$ of heads of a particular coin.
+
+$$\,$$
+
+As we have no reason to belief that the coin is biased, we may assume a prior distribution for $\pi$ which has maximum density at $\pi=0.5$.
+
+$$\,$$
+
+One such distribution is the Beta(a=4,b=4) distribution.
+
+
+# Example (cont'd)
+
+Recall that $\Pi\sim \mbox{Beta}(a,b)$ for parameters $a>0,b>0$ if
+
+$$\,$$
+
+$$p(\pi)=\begin{cases}
+\frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}\pi^{a-1}(1-\pi)^{b-1} \quad & \mbox{if }\pi\in[0,1]\\
+0                                                                  & \mbox{otherwise}
+\end{cases}$$
+
+$$\,$$
+
+where $\Gamma(\alpha)=\int_0^{\infty}z^{\alpha-1}e^{-z}dz$ is the gamma function.
+
+$$\,$$
+For simplicity, we will write $\gamma(a,b)=\frac{\Gamma(a,b)}{\Gamma(a)\Gamma(b)}$.
+
+
+# Example (cont'd)
+
+Further, if $\Pi\sim\mbox{Beta}(a,b)$:
+
+$$E(\Pi)=\frac{a}{a+b},\quad Var(\Pi)=\frac{ab}{(a+b)^2(a+b+1)}$$
+
+$$\,$$
+
+$$\mbox{mode}(\Pi)=\begin{cases}
+\frac{a-1}{a+b-2}\,       &\mbox{ if }a>1,b>1 \\
+[0,1] \mbox{ (any value)} &\mbox{if }a=b=1 \\
+\{0,1\} \mbox{ (bimodal)} &\mbox{if }a<1,b<1 \\
+0                         &\mbox{if }a\leq1,b>1 \\
+1                         &\mbox{if }a>1, b\leq1
+\end{cases}$$
+
+
+# Example (cont'd)
+
+```{r, echo=F}
+l<-1000
+x<-seq(0,1,length=l)
+p1x<-dbeta(x,shape1=0.5,shape2=0.5); p2x<-dbeta(x,shape1=1,shape2=1)
+p3x<-dbeta(x,shape1=2,shape2=2); p4x<-dbeta(x,shape1=1,shape2=3)
+p5x<-dbeta(x,shape1=2,shape2=5); p6x<-dbeta(x,shape1=5,shape2=1)
+xFull<-rep(x,6)
+pFull<-c(p1x,p2x,p3x,p4x,p5x,p6x)
+pars<-factor(c(rep(1,l),rep(2,l),rep(3,l),rep(4,l),rep(5,l),rep(6,l)))
+df<-tibble(x=xFull,p=pFull,pars=pars)
+cols<-c("darkgrey", "steelblue", "salmon", "orange", "greenyellow", "mediumorchid")
+labs<-c("a=0.5,b=0.5",
+        "a=1,b=1",
+        "a=2,b=2",
+        "a=1,b=3",
+        "a=2,b=5",
+        "a=5,b=1")
+
+ggplot(data=df,mapping=aes(x=x,y=p,colour=pars,fill=pars)) +
+  geom_line(lwd=1,alpha=0.75) +
+  geom_area(alpha=0.1,position = position_dodge(width = 0),linetype=0) +
+  scale_color_manual(values=cols,labels=labs) +
+  scale_fill_manual(values=cols,labels=labs) +
+  labs(fill="parameters") + 
+  guides(colour=F) +
+  xlab(expression(pi)) +
+  ylab("density") +
+  ggtitle("Beta distributions") +
+  theme(text = element_text(size=20)) +
+  coord_cartesian(ylim=c(0,3))
+```
+
+
+# Example (cont'd)
+
+$$\,$$
+
+With $a=4$ and $b=4$, in our case the prior distribution becomes
+
+$$\,$$
+
+$$p(\pi)=140\cdot\pi^3\cdot(1-\pi)^3$$
+
+$$\,$$
+
+if $\pi\in[0,1]$ and $p(\pi)=0$ otherwise.
+
+
+# Example (cont'd)
+
+Suppose the coin is flipped $n$ times and we observe $k$ heads.
+
+The likelihood of observing this data, given $\pi$, is is obtained from the binomial distribution
+
+$$\,$$
+
+Recall $Y\sim\mbox{Bin}(n,\pi)$ for parameters $n\in\{0,1,2,\ldots\}$ and $\pi\in[0,1]$ if
+
+$$p(Y=k|\pi)=\begin{cases}
+\binom{n}{k}\pi^k(1-\pi)^{n-k} \; & \mbox{if} k\in\{0,1\ldots,n\}\\
+0                                 & \mbox{otherwise}
+\end{cases}$$
+
+And
+
+$$
+E[Y|\pi]=n\pi,\;Var(Y|\pi)=n\pi(1-\pi),\;\mbox{mode}(Y|\pi)=\lfloor(n+1)p\rfloor
+$$
+
+
+# Example (cont'd)
+
+```{r, echo=F}
+plotBin<-function(n,p,col,maxN=10){
+  x<-seq(0,n,by=1)
+  px<-dbinom(x,size=n,prob=p)
+  df<-tibble(x=x,px=px)
+  
+  g<-ggplot(data=df,mapping=aes(x=x,y=px)) +
+    geom_bar(stat="identity",fill=col) +
+    ylab("P(Y=k)") + theme(text = element_text(size=20)) +
+    ggtitle(substitute(paste(sep="","Binomial with n=",n,", ",pi,"=",p),list(n=1,p=p))) +
+    scale_x_continuous(breaks=0:maxN) +
+    coord_cartesian(xlim=c(-0.5,maxN+0.5),ylim=c(0,1))
+  
+  return(g)
+}
+  
+g1<-plotBin(1,.2,"darkgrey"); g2<-plotBin(2,.2,"steelblue")
+g3<-plotBin(3,.2,"salmon"); g4<-plotBin(4,.2,"greenyellow")
+g5<-plotBin(5,.2,"mediumorchid"); g6<-plotBin(10,.2,"orange")
+grid.arrange(g1,g2,g3,g4,g5,g6,ncol=3)
+```
+
+
+# Example (cont'd)
+
+$$\,$$
+
+Suppose $n=6$, $k=2$, then the likelihood becomes
+
+$$\,$$
+
+$$p(k=2|\pi)=\binom{6}{2}\pi^2(1-\pi)^4$$
+
+# Example (cont'd)
+
+Given the prior distribution
+
+$$\,$$
+
+$$p(\pi)=140\cdot\pi^3\cdot(1-\pi)^3$$
+
+$$\,$$
+
+and the likelihood
+
+$$\,$$
+
+$$p(k=2|\pi)=\binom{6}{2}\cdot\pi^2\cdot(1-\pi)^4$$
+$$\,$$
+
+find the posterior distribution $p(\pi|k=4)$.
+
+
+# Example (cont'd)
+
+Quite generally, the posterior is given by
+
+$$p(\pi|k) = \frac{p(k|\pi)\,p(\pi)}{\int_0^1 p(k|\theta)\,p(\theta) d\theta}$$
+The numerator is given by:
+
+$$
+\begin{align}
+p(k|\pi)\,p(\pi) &=& \binom{n}{k}\pi^k(1-\pi)^{n-k} \gamma(a,b)\pi^{a-1}(1-\pi)^{b-1} \\
+                 &=& \gamma(a,b)\binom{n}{k}\pi^{a+k-1}(1-\pi)^{b+n-k-1}
+\end{align}
+$$
+And the denominator is given by
+
+$$\int_0^1 p(k|\theta)\,p(\theta) d\theta = \gamma(a,b)\binom{n}{k}\int_0^1 \theta^{a+k-1}(1-\theta)^{b+n-k-1} d\theta$$
+
+# Example (cont'd)
+
+To solve this integral, make use of the fact that the Beta($\alpha$,$\beta$) distribution needs to integrate to 1 for it to be a valid probability distribution:
+
+$$
+\begin{align}
+            & \int_0^1 \frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)+\Gamma(\beta)}\theta^{\alpha-1}(1-\theta)^{\beta-1} d\theta &=& 1 \\
+\Rightarrow & \int_0^1\theta^{\alpha-1}(1-\theta)^{\beta-1} d\theta &=& \frac{\Gamma(\alpha)\Gamma(\beta)}{\Gamma(\alpha+\beta)}
+\end{align}
+$$
+
+Writing $\alpha=a+k$ and $\beta=b+n-k$, we see that
+
+$$\int_0^1 \theta^{a+k-1}(1-\theta)^{b+n-k-1} d\theta = \frac{\Gamma(a+k)\Gamma(b+n-k)}{\Gamma(a+b+n)}$$
+
+# Example (cont'd)
+
+Therefore, the posterior density for $\pi$ is given by
+
+$$\,$$
+
+$$
+\begin{align}
+p(\pi|k) &=& \frac{\gamma(a,b)\binom{n}{k}\pi^{a+k-1}(1-\pi)^{b+n-k-1}}{\gamma(a,b)\binom{n}{k}\frac{\Gamma(a+k)\Gamma(b+n-k)}{\Gamma(a+b+n)}} \\
+&&\\
+&=& \frac{\Gamma(a+b+n)}{\Gamma(a+k)\Gamma(n-k+b)}\pi^{a+k-1}(1-\pi)^{b+n-k-1}
+\end{align}
+$$
+
+$$\,$$
+
+which is a Beta($a+k$,$b+n-k$) distribution.
+
+$$\,$$
+
+# Example (cont'd)
+
+Filling in $k=2$, $n=6$, $a=4$, $b=4$, we get a Beta(6,8) distribution:
+
+$$\,$$
+
+$$p(\pi|k=2)=10296\cdot\pi^5\cdot(1-\pi)^7$$
+for $\pi\in[0,1]$.
+
+$$\,$$
+
+Note: Remember that $\Gamma(m)=(m-1)!$ for $m=0,1,2,\ldots$ .
+
+# Example (cont'd)
+
+So we see that
+
+$$\,$$
+
+$$\begin{cases}
+\mbox{prior }\, p(\pi) & = \mbox{Beta}(a,b) \\
+\\
+\mbox{likelihood }\, p(k|\pi) & = \mbox{Bin}(n,\pi)
+\end{cases}$$
+
+$$\,$$
+
+$$\Rightarrow\mbox{posterior }\, p(\pi|k) = \mbox{Beta}(a+k,b+n-k)$$
+
+# Example (cont'd)
+
+```{r, echo=F}
+xx<-seq(0,1,length=1000)
+yPrior<-dbeta(xx,4,4)
+yLik<-dbinom(x=2,size=6,prob=xx)
+yPost<-dbeta(xx,6,8)
+
+plotLines<-function(n,k,a,b){
+  par(xpd=T)
+  abline(v=a/(a+b),col="steelblue",lty=2,lwd=1.5)
+  abline(v=k/n,col="salmon",lty=2,lwd=1.5)
+  abline(v=(k+a-1)/(n+a+b-2),col="mediumorchid",lty=2,lwd=1.5)
+}
+
+par(mfrow=c(3,1))
+
+plot(xx,yPrior,lwd=3,col="steelblue",xlab=expression(pi),ylab="",main="prior",cex.main=3,cex.lab=3,cex.axis=3,type="l")
+plot(xx,yLik,lwd=3,col="salmon",xlab=expression(pi),ylab="",main="likelihood",cex.main=3,cex.lab=3,cex.axis=3,type="l")
+plot(xx,yPost,lwd=3,col="mediumorchid",xlab=expression(pi),ylab="",main="posterior",cex.main=3,cex.lab=3,cex.axis=3,type="l")
+```
+
+# Example (cont'd)
+
+Unlike frequentist statistics, where we would have obtained a point estimate $\hat{\pi}$, Bayesian statistics yield a posterior *distribution* for $\pi$.
+
+$$\,$$
+
+We can still come up with a point estimate by, e.g., finding the value of $\pi$ for which the posterior distribution achieves its maximum (assuming this exists and is unique). This is called **maximum a posteriori** (MAP) estimation.
+
+There are other point estimators we could use: e.g. the expectation of the posterior distribution $E\left[p(\pi|k)\right]$.
+
+We will get back to this later.
+
+
+# Example (cont'd)
+
+For our example the MAP is achieved for $\pi=\hat{\pi}_{MAP}$ so that $\frac{d}{d\pi}p(\pi|k)=0$.
+
+$$\frac{d}{d\pi}p(\pi|k)=0 \iff \pi=\pi_{MAP}=\frac{a+k-1}{a+b+n-2}$$
+
+For $n=6$, $k=2$, $a=4$, $b=4$ this yields $\hat{\pi}_{MAP}=5/12=0.41\bar{66}$.
+
+The likelihood is maximised at the (frequentist) maximum likelihood estimate $\hat{\pi}_{MLE}=\frac{k}{n}$ which for $n=6$, $k=2$ is $\hat{\pi}_{MLE}=2/6=0.\bar{33}$.
+
+The prior distribution for this example is maximised at $\hat{\pi}=0.5$.
+
+The data "pushes" the prior distribution towards the likelihood function.
+
+
+# Example (cont'd)
+
+Now, see what happens if we increase the amount of data, i.e. the number of repeated experiments, assuming the proportion of heads remains the same and keeping the same Beta(4,4) prior.
+
+$$\,$$
+
+* For $n=6$, $k=2$, the posterior is a Beta(6,8) distribution.
+
+* For $n=12$, $k=4$, the posterior is a Beta(8,12) distribution.
+
+* For $n=60$, $k=20$, the posterior is a Beta(24,44) distribution.
+
+$$\,$$
+
+The posterior becomes more and more indistinguishable from the likelihood: the more data there is, the less important the prior becomes -- the likelihood dominates.
+
+
+# Example (cont'd)
+
+```{r, echo=F}
+xx<-seq(0,1,length=1000)
+
+yPrior<-dbeta(xx,4,4)
+
+yLik<-dbinom(x=2,size=6,prob=xx)
+yLik2<-dbinom(x=4,size=12,prob=xx)
+yLik3<-dbinom(x=20,size=60,prob=xx)
+
+yPost<-dbeta(xx,6,8)
+yPost2<-dbeta(xx,8,12)
+yPost3<-dbeta(xx,24,44)
+
+par(mfrow=c(4,3))
+
+plot(type="n",axes=F,xlab="",ylab="",0:1,0:1); text(cex=3,adj=c(0.5,0.5),x=0.5,y=0.5,"n=6, k=2")
+plot(type="n",axes=F,xlab="",ylab="",0:1,0:1); text(cex=3,adj=c(0.5,0.5),x=0.5,y=0.5,"n=12, k=4")
+plot(type="n",axes=F,xlab="",ylab="",0:1,0:1); text(cex=3,adj=c(0.5,0.5),x=0.5,y=0.5,"n=60, k=20")
+
+plot(xx,yPrior,lwd=3,col="steelblue",xlab=expression(pi),ylab="",main="prior",cex.main=3,cex.lab=3,cex.axis=3,type="l"); plotLines(n=6,k=2,a=4,b=4)
+plot(xx,yPrior,lwd=3,col="steelblue",xlab=expression(pi),ylab="",main="prior",cex.main=3,cex.lab=3,cex.axis=3,type="l"); plotLines(n=12,k=4,a=4,b=4)
+plot(xx,yPrior,lwd=3,col="steelblue",xlab=expression(pi),ylab="",main="prior",cex.main=3,cex.lab=3,cex.axis=3,type="l"); plotLines(n=60,k=20,a=4,b=4)
+
+plot(xx,yLik,lwd=3,col="salmon",xlab=expression(pi),ylab="",main="likelihood",cex.main=3,cex.lab=3,cex.axis=3,type="l"); plotLines(n=6,k=2,a=4,b=4)
+plot(xx,yLik2,lwd=3,col="salmon",xlab=expression(pi),ylab="",main="likelihood",cex.main=3,cex.lab=3,cex.axis=3,type="l"); plotLines(n=12,k=4,a=4,b=4)
+plot(xx,yLik3,lwd=3,col="salmon",xlab=expression(pi),ylab="",main="likelihood",cex.main=3,cex.lab=3,cex.axis=3,type="l"); plotLines(n=60,k=20,a=4,b=4)
+
+plot(xx,yPost,lwd=3,col="mediumorchid",xlab=expression(pi),ylab="",main="posterior",cex.main=3,cex.lab=3,cex.axis=3,type="l"); plotLines(n=6,k=2,a=4,b=4)
+plot(xx,yPost2,lwd=3,col="mediumorchid",xlab=expression(pi),ylab="",main="posterior",cex.main=3,cex.lab=3,cex.axis=3,type="l"); plotLines(n=12,k=4,a=4,b=4)
+plot(xx,yPost3,lwd=3,col="mediumorchid",xlab=expression(pi),ylab="",main="posterior",cex.main=3,cex.lab=3,cex.axis=3,type="l"); plotLines(n=60,k=20,a=4,b=4)
+```
+
+
+# Example (cont'd): posteriors for 4 different prior & sample size combinations
+
+```{r, echo=F}
+yPrior<-dbeta(xx,1,1)
+yPrior2<-dbeta(xx,3,2)
+
+yPost<-dbeta(xx,2+1,6-2+1)
+yPost2<-dbeta(xx,2+3,6-2+2)
+yPost3<-dbeta(xx,20+1,60-2+1)
+yPost4<-dbeta(xx,20+3,60-2+2)
+
+
+par(mfrow=c(2,2),mar=c(6,7,5,1))
+
+plot(type="n",xlab=expression(pi),ylab=expression(paste(sep="","p(",pi,"|k)")),0:1,0:1,ylim=c(0,2.75),main="Beta(1,1) prior, n=6, k=2",cex.main=2,cex.axis=2,cex.lab=2)
+lines(xx,yPrior,lty=2,col="steelblue",lwd=3)
+lines(xx,yPost,lty=1,col="mediumorchid",lwd=3)
+legend(x="topright",lty=c(2,1),lwd=3,col=c("steelblue","mediumorchid"),legend=c("prior","posterior"),bty="n")
+
+plot(type="n",xlab=expression(pi),ylab=expression(paste(sep="","p(",pi,"|k)")),0:1,0:1,ylim=c(0,2.75),main="Beta(3,2) prior, n=6, k=2",cex.main=2,cex.axis=2,cex.lab=2)
+lines(xx,yPrior2,lty=2,col="steelblue",lwd=3)
+lines(xx,yPost2,lty=1,col="mediumorchid",lwd=3)
+legend(x="topright",lty=c(2,1),lwd=3,col=c("steelblue","mediumorchid"),legend=c("prior","posterior"),bty="n")
+
+plot(type="n",xlab=expression(pi),ylab=expression(paste(sep="","p(",pi,"|k)")),0:1,0:1,ylim=c(0,10),main="Beta(1,1) prior, n=60, k=20",cex.main=2,cex.axis=2,cex.lab=2)
+lines(xx,yPrior,lty=2,col="steelblue",lwd=3)
+lines(xx,yPost3,lty=1,col="mediumorchid",lwd=3)
+legend(x="topright",lty=c(2,1),lwd=3,col=c("steelblue","mediumorchid"),legend=c("prior","posterior"),bty="n")
+
+plot(type="n",xlab=expression(pi),ylab=expression(paste(sep="","p(",pi,"|k)")),0:1,0:1,ylim=c(0,10),main="Beta(3,2) prior, n=60, k=20",cex.main=2,cex.axis=2,cex.lab=2)
+lines(xx,yPrior2,lty=2,col="steelblue",lwd=3)
+lines(xx,yPost4,lty=1,col="mediumorchid",lwd=3)
+legend(x="topright",lty=c(2,1),lwd=3,col=c("steelblue","mediumorchid"),legend=c("prior","posterior"),bty="n")
+```
+
+
+# Example
+
+$$\,$$
+
+**Discrete prior, binomial sampling model**
+
+
+# Example (cont'd)
+
+That the likelihood dominates the prior for large datasets is not fully true: where the prior distribution (whether it's a pdf or a pmf) is zero, the posterior distribution is also zero -- no matter how much data. This follows from
+
+$$\,$$
+
+$$p(\theta|y)\propto p(y|\theta)\,p(\theta)$$
+
+$$\,$$
+
+Among others, this means that a discrete prior leads to a discrete posterior distribution.
+
+
+# Example (cont'd)
+
+Let's return to the same coin throwing experiment. Suppose that rather than a Beta(a,b) prior, we know that the coin used for the experiment can only be one of 6 coins: 3 are biased towards heads with $\pi=P(\mbox{heads})=0.8$, 2 are biased towards tails with $\pi=0.3$ and 1 coin is fair with $\pi=0.5$. Assuming each coin to be equally likely to be picked, this gives the following prior distribution for $\pi$:
+
+$$\,$$
+
+$$p(\pi)=\begin{cases}
+1/3=0.\bar{33} & \mbox{if }\pi=0.3 \\
+1/6=0.1\bar{66} & \mbox{if }\pi=0.5 \\
+1/2=0.5 & \mbox{if }\pi=0.8
+\end{cases}$$
+
+$$\,$$
+
+# Example (cont'd)
+
+The likelihood is still given by the binomial distribution:
+
+$$\,$$
+
+$$p(k|\pi)=\binom{n}{k}\pi^k(1-\pi)^{n-k}$$
+
+$$\,$$
+
+Here we have $n=6$ and $k=2$.
+
+This can be written down / computed using tables.
+
+
+# Example (cont'd)
+
+![](images/Example_DiscretePriorBinomialLikelihood_likelihood.png)
+
+# Example (cont'd)
+
+![](images/Example_DiscretePriorBinomialLikelihood_posterior.png)
+
+# Example (cont'd)
+
+```{r, echo=F}
+df<-data.frame(prior=c(1/3,1/6,1/2),likelihood=c(0.3241,0.2344,0.0154),posterior=c(0.6980,0.2524,0.0496))
+rownames(df)<-c(0.3,0.5,0.8)
+
+par(mfrow=c(1,3),mar=c(7,7,5,1),mgp=c(5,2,0))
+barplot(df$prior,horiz = T,names.arg=rownames(df),las=1,col=c("greenyellow","orange","mediumorchid"),border=F,main="prior",xlab=expression(paste(sep="","p(",pi,")")),ylab=expression(pi),xlim=c(0,1),cex.main=3,cex.lab=3,cex.axis=2,cex.names=2)
+barplot(df$likelihood,horiz = T,names.arg=rownames(df),las=1,col=c("greenyellow","orange","mediumorchid"),border=F,main="likelihood",xlab=expression(paste(sep="","p(k|",pi,")")),ylab=expression(pi),xlim=c(0,1),cex.main=3,cex.lab=3,cex.axis=2,cex.names=2)
+barplot(df$posterior,horiz = T,names.arg=rownames(df),las=1,col=c("greenyellow","orange","mediumorchid"),border=F,main="posterior",xlab=expression(paste(sep="","p(",pi,"|k)")),ylab=expression(pi),xlim=c(0,1),cex.main=3,cex.lab=3,cex.axis=2,cex.names=2)
+```
+
+
+# Binomial = sum of n iid Bernoulli experiments
+
+Recall that the binomial distribution results from $n$ independent trials of binary experiments with probability parameter $\pi$.
+
+The coin toss example was in fact based on repeated binary / Bernoulli experiments.
+
+We used the binomial distribution, because the sum of successes is a **sufficient** statistic for $\pi$, i.e. it contains all the information we need to make inference about $\pi$.
+
+
+# Binomial = sum of n iid Bernoulli experiments
+
+This can be seen by writing down the likelihood for $Y_1,\ldots,Y_n$ independent, identically Bernoulli($\pi$) distributed random variables:
+
+$$\,$$
+
+$$p(y_1,\ldots,y_n|\pi)=\prod_i p(y_i|\pi)=\prod_i \pi^{y_i}(1-\pi)^{1-y_i}=\pi^{\sum_i y_i}(1-\pi)^{n-\sum_i y_i}=\pi^k(1-\pi)^{n-k}$$
+
+$$\,$$
+
+When we consider $Y=\sum_iY_i$, and want to make statements about $P(Y=k)$ we need to also consider how many different ways there are to obtain the same sum -- this is where the binomial coefficient $\binom{n}{k}$ comes from.
+
+
+# Example (beta prior, binomial sampling model)
+
+Let's return the the example where $\pi\sim \mbox{Beta}(a,b)$ and $k|\pi\sim \mbox{Bin}(n,\pi)$.
+
+The posterior distribution $p(\pi|k)$ allows us to make inference about $\pi$ after observing the data $Y=\sum_i Y_i = k$.
+
+However we can also make inference about future data $\tilde{Y}_{n+1}$.
+
+$$\,$$
+
+For this we need to derive the **posterior predictive distribution** $p(\tilde{Y}_{n+1}|k)=p(\tilde{Y}_{n+1}|y_1,\ldots,y_n)$.
+
+# Example (cont'd)
+
+$$
+\begin{align}
+p(\tilde{Y}_{n+1}=1|y_1,\ldots,y_n) &=& \int_0^1 p(\tilde{Y}_{n+1}=1,\pi|y_1,\ldots,y_n)d\pi\\
+                                    &=& \int_0^1 p(\tilde{Y}_{n+1}=1|\pi,y_1,\ldots,y_n)\,p(\pi|y_1,\ldots,y_n)d\pi \\
+                                    &=& \int_0^1 \pi \,p(\pi|y_1,\ldots,y_n)d\pi \\
+                                    &=& E[\pi|y_1,\ldots,y_n] = E[\pi|k] \\
+                                    &=& \frac{a+k}{a+b+n}
+\end{align}
+$$
+
+where the last line follows from the fact that the posterior distribution for $\pi|k$ is a Beta(a+k,b+n-k) distribution.
+
+
+# Example (cont'd)
+
+It follows that 
+
+$$\,$$
+
+$$
+\begin{align}
+p(\tilde{Y}_{n+1}=0|y_1,\ldots,y_n) &=& 1-p(\tilde{Y}_{n+1}=1|y_1,\ldots,y_n) \\
+&& \\
+                                    &=& \frac{b+n-k}{a+b+n}
+\end{align}
+$$
+
+
+# Example (cont'd)
+
+Note that
+
+$$\,$$
+
+1. The posterior predictive distribution does not depend on any unknown quantities (otherwise we would not be able to use it to make predictions).
+
+2. The posterior predictive distribution depends on observed data. This may seem to violate the exchangeability condition. But this is for future data. The past data $y_1,\ldots,y_n$ provide information about $\pi$ and this in turn provides information about $\tilde{Y}_{n+1}$. If this was not the case, we would not be able to infer anything about the unsampled population given the sampled cases.
+
+
+#
+
+$$\,$$
+$$\,$$
+
+**PRIOR DISTRIBUTIONS**
+
+
+# Prior distributions
+
+$$\,$$
+
+The likelihood factor in Bayesian models appears familiar: you are familiar with this from other modules (e.g. STA6103 - GLM).
+
+$$\,$$
+
+You may struggle with the prior distribution: how do you decide what is a good prior distribution?
+
+
+# Prior distributions: informative & non-informative priors
+
+In the first coin toss experiment we used a Beta(4,4) distribution. We argued this was appropriate since it had highest density at $\pi=0.5$ which reflected our prior belief that there is little reason to assume the coin is not well balanced.
+
+Clearly this was **informative**: the prior distribution the prior expressed specific, definite information about $\pi$ and favoured $\pi=0.5$.
+
+But a Beta(2,2) and a Beta(8,8) would also have had highest density at $\pi=0.5$.
+
+
+# Prior distributions: informative & non-informative priors
+
+```{r, echo=F}
+l<-1000
+x<-seq(0,1,length=l)
+p11<-dbeta(x,1,1)
+p22<-dbeta(x,2,2)
+p33<-dbeta(x,3,3)
+p44<-dbeta(x,4,4)
+p88<-dbeta(x,6,6)
+p1010<-dbeta(x,8,8)
+xFull<-rep(x,6)
+pFull<-c(p11,p22,p33,p44,p88,p1010)
+pars<-factor(c(rep(1,l),rep(2,l),rep(3,l),rep(4,l),rep(5,l),rep(6,l)))
+df<-tibble(x=xFull,p=pFull,pars=pars)
+cols<-c("darkgrey", "steelblue", "salmon", "orange", "greenyellow", "mediumorchid")
+labs<-c(expression(paste(sep="",alpha,"=1, ",beta,"=1")),
+        expression(paste(sep="",alpha,"=2, ",beta,"=2")),
+        expression(paste(sep="",alpha,"=3, ",beta,"=3")),
+        expression(paste(sep="",alpha,"=4, ",beta,"=4")),
+        expression(paste(sep="",alpha,"=6, ",beta,"=6")),
+        expression(paste(sep="",alpha,"=8, ",beta,"=8")))
+
+ggplot(data=df,mapping=aes(x=x,y=p,colour=pars,fill=pars)) +
+  geom_line(lwd=1,alpha=0.75) +
+  geom_area(alpha=0.1,position = position_dodge(width = 0),linetype=0) +
+  scale_color_manual(values=cols,labels=labs) +
+  scale_fill_manual(values=cols,labels=labs) +
+  labs(fill="parameters") + 
+  guides(colour=F) +
+  xlab(expression(pi)) +
+  ylab("density") +
+  ggtitle("Beta distributions with mode at 0.5") +
+  theme(text = element_text(size=20)) +
+  coord_cartesian(ylim=c(0,3))
+```
+
+
+# Prior distributions: informative & non-informative priors
+
+Depending on how sure we are, we can go for a more peaked distribution.
+
+If we have no prior knowledge at all, you could also argue that all values of $\pi$ are equally likely. This would justify a uniform(0,1) distribution.
+
+A prior distribution which expresses only general or vague information about a parameter is called **non-informative** or **diffuse prior**.
+
+Note: Beta(1,1) = Uniform(0,1).
+
+
+# Prior distributions: informative & non-informative priors
+
+How do you come up with a uninformative prior?
+
+Easy in the case of the discrete or continuous uniform distribution, but this does not work for discrete distributions with an infinity of possible values or a continuous distributions over an open-ended interval.
+
+Solution: choose priors with an objective mean / median and large variance, e.g. $\mathcal{N}(0,10)$.
+
+Such priors are called **weakly informative** and are very useful for regularisation, i.e. to keep inferences in a reasonable range.
+
+
+# Prior distributions: Jeffreys prior
+
+Sir Harold Jeffreys devised a general rule for generating an objective or noninformative priors for a sampling model $p(y|\theta)$. The **Jeffreys prior** is given by
+
+$$\,$$
+
+$$p_J(\theta)\propto \sqrt{I(\theta)}$$
+
+$$\,$$
+
+where $I(\theta)=-E\left[\left.\frac{\delta^2}{\delta\theta^2}\log\, p(X|\theta)\right|\theta\right]$ is the *Fisher information*.
+
+$$\,$$
+
+This can lead to prior distributions which are not actually probability distributions. These are called **improper priors** (see practical).
+
+# Prior distributions: Jeffreys prior
+
+Example
+$$\,$$
+
+Let $Y\sim Bin(n,\theta)$. Derive $p_J(\theta)$.
+
+
+# Prior distributions: Jeffreys prior
+
+We have:
+
+$$\,$$
+
+$$
+\begin{align}
+\frac{\delta}{\delta\theta}\log\, p(Y=y|\theta) &=& \frac{\delta}{\delta\theta}\log\left(\binom{n}{y}\theta^x(1-\theta)^{n-y}\right) \\
+                                                &=& \frac{\delta}{\delta\theta}\left[\log\binom{n}{y}+y\log\theta+(n-y)\log(1-\theta)\right] \\
+                                                &=& \frac{y}{\theta}-\frac{n-y}{(1-\theta)^2}
+\end{align}
+$$
+
+and so
+
+$$\frac{\delta^2}{\delta\theta^2}\log\,p(y|\theta)=-\frac{y}{\theta^2}-\frac{n-y}{1-\theta}$$
+
+# Prior distributions: Jeffreys prior
+
+Hence:
+
+$$\,$$
+
+$$J(\theta)=-E\left[-\frac{x}{\theta^2}-\frac{n-y}{1-\theta}\right]=\frac{E[Y|\theta]}{\theta^2}+\frac{n-E[Y|\theta]}{(1-\theta)^2}$$
+
+$$\,$$
+
+Note that $Y\sim Bin(n,\theta)\Rightarrow E[Y|\theta]=n\theta$:
+
+$$\,$$
+
+$$J(\theta)=\frac{n\theta}{\theta^2}+\frac{n-n\theta}{(1-\theta)^2}=\frac{n}{\theta}+\frac{n}{1-\theta}=\frac{n}{\theta(-1\theta)}$$
+
+# Prior distributions: Jeffreys prior
+
+Therefore:
+
+$$p_J(\theta)\propto\sqrt{\frac{n}{\theta(1-\theta)}}$$
+In other words:
+$$p_J(\theta)\propto\theta^{1/2}(1-\theta)^{1/2}$$
+
+If $\theta\sim \mbox{Beta}\left(\frac{1}{2},\frac{1}{2}\right)$, then $p(\theta)=\frac{\Gamma(1)}{\Gamma\left(\frac{1}{2}\right)\Gamma\left(\frac{1}{2}\right)}\theta^{1/2}(1-\theta)^{1/2}$.
+
+Therefore, if $X\sim Bin(n,\theta)$, then the Jeffreys prior distribution for $\theta$ is a Beta$\left(\frac{1}{2},\frac{1}{2}\right)$ distribution. This prior is proper.
+
+# Prior distributions: Jeffreys prior
+
+```{r, echo=F}
+l<-1000
+x<-seq(0,1,length=l)
+p<-dbeta(x,0.5,0.5)
+df<-tibble(x=x,p=p)
+col<-c("steelblue")
+
+ggplot(data=df,mapping=aes(x=x,y=p)) +
+  geom_line(lwd=1,alpha=0.75,col=col) +
+  geom_area(alpha=0.1,position = position_dodge(width = 0),linetype=0,fill=col) +
+  guides(colour=F) +
+  xlab(expression(pi)) +
+  ylab("density") +
+  ggtitle("Beta(0.5,0.5) distribution") +
+  theme(text = element_text(size=20)) +
+  coord_cartesian(ylim=c(0,3))
+```
+
+# Prior distributions: Conjugate priors
+
+We can also choose a family of prior distribution for mathematical simplicity.
+
+We saw earlier that
+
+$$\,$$
+
+$$\mbox{beta prior} \quad + \quad \mbox{binomial sampling model} \quad\Rightarrow\quad \mbox{beta posterior}$$
+
+$$\,$$
+
+This is called *conjugacy*: the beta distribution is the *conjugate distribution* for a binomial sample model.
+
+# Prior distributions: Conjugate priors
+
+Formally we can define:
+$$\,$$
+
+A class $\mathcal{P}$ of prior probability distributions is called **conjugate** for a sampling model $p(y|\theta)$ if 
+
+$$\,$$
+
+$$p(\theta)\in\mathcal{P}\quad\Rightarrow\quad p(\theta|x)\in\mathcal{P}$$
+
+# Example
+
+$$\,$$
+
+**Gamma prior, Poisson sampling model**
+
+
+# Example (cont'd)
+
+Recall that if $Y\sim \mbox{Pois}(\lambda)$, then 
+
+$$\,$$
+
+$$\begin{cases}
+P(Y=k|\lambda) &= \frac{\lambda^ke^{-\lambda}}{k!} & \;\mbox{if }k=0,1,2\ldots\mbox{ and 0 otherwise} \\
+E[Y|\lambda]   &=\lambda & \\
+Var(Y|\lambda) &=\lambda &
+\end{cases}$$
+
+
+# Example (cont'd)
+
+```{r, echo=F}
+plotPois<-function(lambda,col,maxK=10){
+  x<-seq(0,maxK,by=1)
+  px<-dpois(x,lambda=lambda)
+  df<-tibble(x=x,px=px)
+  
+  g<-ggplot(data=df,mapping=aes(x=x,y=px)) +
+    geom_bar(stat="identity",fill=col) +
+    ylab("P(Y=k)") + theme(text = element_text(size=20)) +
+    ggtitle(paste(sep="","Poisson with rate=",lambda)) +
+    scale_x_continuous(breaks=0:maxK) +
+    coord_cartesian(xlim=c(-0.5,maxK+0.5),ylim=c(0,1))
+  
+  return(g)
+}
+  
+g1<-plotPois(0,"darkgrey"); g2<-plotPois(0.5,"steelblue")
+g3<-plotPois(1,"salmon"); g4<-plotPois(2,"greenyellow")
+g5<-plotPois(3,"mediumorchid"); g6<-plotPois(5,"orange")
+grid.arrange(g1,g2,g3,g4,g5,g6,ncol=3)
+```
+
+
+# Example (cont'd)
+
+Suppose $Y_i\sim_{\mbox{iid}} \mbox{Pois}(\lambda)$, $i=1,\ldots,n$ and we observe data $y_1,\ldots,y_n$.
+
+The joint pdf of the data is given by
+
+$$\,$$
+
+$$
+\begin{align}
+p(y_1,\ldots,y_n|\lambda) &=&\prod_{i=1}^n p(y_i|\lambda) \\
+                          &=&\prod_{i=1}^n \frac{1}{y_i!}\lambda^{y_i}e^{-\lambda} \\
+                          &=&\frac{1}{\prod_i y_i!}\lambda^{\sum_i y_i} e^{-n\lambda}
+\end{align}
+$$
+
+
+# Example (cont'd)
+
+The factor $\frac{1}{\prod_i y_i!}$ is constant for each dataset. So if we compare densities for different values of $\lambda$, this factor will cancel out. All information about $\lambda$ is therefore contained in $\sum_i y_i$ (as was the case for the i.i.d. binary data).
+
+$$\,$$
+
+$\sum_i y_i$ is a sufficient statistic for the parameter $\lambda$ in the Poisson sampling model.
+
+# Example (cont'd)
+
+
+Posterior density
+
+$$\,$$
+
+If we assume a prior distribution $p(\lambda)$, then the posterior density for $\lambda$ given the data is given by
+
+$$
+\begin{cases}
+p(\lambda|y_i,\ldots,y_n) & \propto & p(\lambda) \, p(y_1,\ldots,y_n|\lambda) \\
+                         & \propto & p(\lambda) \, \lambda^{\sum y_i}e^{-n\lambda}
+\end{cases}
+$$
+
+If we want $p(\lambda)$ to be conjugate for the Poisson sampling model, i.e. we want $p(\lambda|y_1,\ldots,y_n)$ to be in the same family of distributions as $p(\lambda)$, then the above implies that $p(\lambda)$ needs to include terms of the form $\lambda^c_1e^{-c_2\lambda}$.
+
+
+# Example (cont'd)
+
+The simplest class of such distributions is the family of gamma distributions (these include only such terms).
+
+Recall $\Lambda\sim\Gamma(a,b)$ with parameters $a>0, b>0$ if
+
+$$
+p(\lambda|a,b)=\begin{cases}
+\frac{b^a}{\Gamma(a)}\lambda^{a-1}e^{-b \lambda}     &\mbox{ if }x>0\\
+0             &\mbox{ otherwise}
+\end{cases}
+$$
+
+where $\Gamma(\alpha)=\int_0^{\infty}z^{\alpha-1}e^{-z}dz$ is the gamma function.
+
+$$\,$$
+
+And
+
+$$E(\Lambda)=\frac{a}{b},\, Var(\Lambda)=\frac{a}{b^2},\,\mbox{mode}(\Lambda)=\frac{a-1}{b}\,\mbox{ if }a>1,\, 0\mbox{ otherwise}$$
+
+
+# Example (cont'd)
+
+```{r, echo=F}
+l<-1000; x<-seq(0,15,length=l)
+p1x<-dgamma(x,shape=1,rate=0.5); p2x<-dgamma(x,shape=1,rate=2)
+p3x<-dgamma(x,shape=0.5,rate=1); p4x<-dgamma(x,shape=2,rate=1)
+p5x<-dgamma(x,shape=4,rate=1); p6x<-dgamma(x,shape=6,rate=1)
+xFull<-rep(x,6); pFull<-c(p1x,p2x,p3x,p4x,p5x,p6x)
+pars<-factor(c(rep(1,l),rep(2,l),rep(3,l),rep(4,l),rep(5,l),rep(6,l)))
+df<-tibble(x=xFull,p=pFull,pars=pars)
+
+cols<-c("darkgrey", "steelblue", "salmon", "orange", "greenyellow", "mediumorchid")
+labs<-c("a=1, b=0.5",
+        "a=1, b=2",
+        "a=0.5, b=0.5",
+        "a=2, b=1",
+        "a=4, b=1",
+        "a=6, b=1")
+
+ggplot(data=df,mapping=aes(x=x,y=p,colour=pars,fill=pars)) +
+  geom_line(lwd=1,alpha=0.75) +
+  geom_area(alpha=0.1,position = position_dodge(width = 0),linetype=0) +
+  scale_color_manual(values=cols) +
+  scale_fill_manual(values=cols,labels=labs) +
+  labs(fill="parameters") + guides(colour=F) +
+  xlab(expression(lambda)) + ylab("density") + ggtitle("Gamma distributions") + 
+  theme(text = element_text(size=20)) +
+  coord_cartesian(ylim=c(0,1.1))
+```
+
+
+# Example (cont'd)
+
+Suppose 
+$$\begin{cases}
+Y_1,\ldots,Y_n\sim_{\mbox{iid}}\mbox{Pois}(\lambda)  \; &\mbox{(sampling model)}\\
+& \\
+\lambda\sim\Gamma(a,b)                                  &\mbox{(prior distribution)}
+\end{cases}$$
+
+Then
+
+$$\,$$
+
+$$
+\begin{align}
+p(\lambda|y_1,\ldots,y_n) &\propto & p(\lambda)\,p(y_1,\ldots,y_n) \\
+                          &\propto & \left(\lambda^{a-1}e^{-b\lambda}\right) \left(\lambda^{\sum y_i} e^{-n\lambda}\right) \\
+                          &\propto & \lambda^{a+\sum y_i-1} e^{-(b+n)\lambda}
+\end{align}
+$$
+
+$$\,$$
+
+This is a $\Gamma(a+\sum_i y_i,b+n)$ distribution.
+
+
+# Example (cont'd)
+
+So we see that
+
+$$\,$$
+
+$$\begin{cases}
+\mbox{prior }\, p(\lambda) & = \Gamma(a,b) \\
+\\
+\mbox{likelihood }\, p(y_i,\ldots,y_n|\lambda) & = \mbox{Pois}(\lambda)
+\end{cases}$$
+
+$$\,$$
+
+$$\Rightarrow\mbox{posterior }\, p(\lambda|y_1,\ldots,y_n) = \Gamma(a+\sum_i y_i,b+n)$$
+
+
+# Conjugate priors for exponential family distributions
+
+The binomial and Poisson sampling models we have seen so far are examples of *one-parameter exponential family distributions*.
+
+A **one-parameter exponential family distribution** is any distribution whose density (or mass) function can be expressed under the form
+
+$$\,$$
+
+$$p(y|\theta)=h(y)c(\theta)e^{\theta t(y)}$$
+where $\theta$ is the unknown parameter and $t(y)$ is the sufficient statistic for the sampling model.
+
+
+# Conjugate priors for exponential family distributions
+
+A general conjugate prior for a one-parameter exponential family sampling model is given by
+
+$$p(\theta|n_0,t_0)=\kappa(n_0,t_0)c(\theta)^{n_0}e^{n_0t_0\theta}$$
+
+Given observed data for i.i.d. variables $Y_1,\ldots,Y_n$, the posterior is then
+
+$$\,$$
+
+$$
+\begin{align}
+p(\theta|y_1,\ldots,y_n) &\propto& p(\theta)p(y_1,\ldots,y_n|\theta) \\
+                         &\propto& c(\theta)^{n_0+n}\exp{\left(\theta\cdot\left[n_0t_o+\sum_{i=1}^n t(y_i)\right]\right)} \\
+                         &\propto& p(\theta|n_0+n,n_0t_o+\sum_it(y_i))
+\end{align}
+$$
+
+Note: $n_0\approx$ "prior sample size", $t_0\approx$ "prior guess of $t(Y)$".
+
+
+# Conjugate priors for exponential family distributions
+
+As an aside, recall from STA6103:
+
+Two-parameter (location $\theta$ and scale $\phi$) exponential family distributions
+
+$$f(y|\theta,\phi)=exp\left(\frac{y\theta-b(\theta)}{a(\phi)}+c(y,\phi)\right)$$
+
+Convince yourself this is the same thing:
+
+* set $a(\phi)=1$ (effectively get rid of this parameter)
+
+* set $c(y,\phi)=\log\, h(y)$
+
+* set $-b(\theta)=\log\, c(\theta)$
+
+* set $y=t(y)$
+
+
+#
+
+[end of STA6206 Bayesian Data analysis Session 2]

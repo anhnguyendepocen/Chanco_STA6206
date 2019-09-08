@@ -1,0 +1,725 @@
+---
+title: "STA6206 - Bayesian Data Analysis - Session 1"
+author: "Marc Henrion"
+date: "9 September 2019"
+header-includes:
+   - \usepackage{amsmath}
+output:
+  powerpoint_presentation:
+    reference_doc: MlwChanco_Template.pptx
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = TRUE, fig.width=16, fig.height=9, dpi=300, highlight=T)
+
+require(tidyverse)
+require(knitr)
+require(gridExtra)
+require(kableExtra)
+```
+
+
+# Preliminaries
+
+* These notes were written in `R markdown`.
+
+* All examples / code in these notes is `R` and a combination of STAN / JAGS / BUGS for Bayesian model specification.
+
+* GitHub repository - will contain all course materials by the end of the week:
+
+  <https://github.com/gitMarcH/Chanco_STA6206>
+
+#
+
+## Session 1: Inference paradigms, probability theory, Bayes' theorem
+
+$$\,$$
+
+Some references for Bayesian statistics / data analysis are:
+
+1. Hoff, P.D. (2009). "*A First Course in Bayesian Statistical Methods*." Springer.
+
+2. Gelman, A., Carlin, J.B., Stern, H.S., Dunson, D.B., Vehtari, A., Rubin, D.B. (2014). "*Bayesian Data Analysis*". 3^rd^ ed. CRC Press.
+
+3. Ramoni, M., Sebastiani, P. (2007), 'Bayesian Methods', in Berthold, M., Hand, D.J. (eds.). "*Intelligent Data Analysis*", 2^nd^ ed., Springer, pp.131-168
+
+4. Stone, J.V. (2013). "*Bayes' Rule: A Tutorial Introduction to Bayesian Analysis*". Sebtel Press.
+
+
+# Notation
+
+* $X, Y, Z$ - random variables
+
+* $x, y, z$ - measured / observed values
+
+* $\bar{X}$, $\bar{Y}, \bar{Z}$ - sample mean estimators for X, Y, Z
+
+* $\bar{x}$, $\bar{y}, \bar{z}$ - sample mean estimates of X, Y, Z
+
+* $\hat{T}$, $\hat{t}$ - given a statistic T, estimator and estimate of T
+
+* $P(A)$ - probability of an event A occuring
+
+* $f_X(.)$, $f_Y(.), f_Z(.)$ - probability mass / density functions of X, Y, Z; sometimes $p_X(.)$ etc. rather than $f_X(.)$
+
+* p(.) - used as a shorthand notation for pmfs / pdfs if the use of this is unambiguous (i.e. it is clear which is the random variable) 
+
+* $X\sim F$ - X distributed according to distribution function F
+
+* $E[X]$, $E[Y]$, $E[Z]$, $E[T]$ - the expectation of X, Y, Z, T respectively
+
+
+#
+
+$$\,$$
+$$\,$$
+**INTRODUCTION**
+
+# Introduction
+
+Probabilities can be used informally to express information and our beliefs about unknown quanities.
+$$\,$$
+This can be made formal.
+$$\,$$
+Probabilities can be used to express rational beliefs and there is a relationship between probability and information.
+
+Bayes' rule provides a rational way of updating beliefs in the light of new information.
+
+$$\,$$
+This process of *inductive learning* is referred to as *Bayesian inference*.
+
+
+# Introduction
+
+Bayesian methods provide
+$$\,$$
+
+* Statistical estimators with desirable properties.
+
+$$\,$$
+
+* Parsimonious descriptions of data.
+
+$$\,$$
+ 
+* A computational framework for model estimation, selection and validation.
+
+
+# Introduction
+
+There are 2 main paradigms for statistical inference:
+$$\,$$
+
+* Frequentist paradigm
+
+$$\,$$
+
+* Bayesian paradigm
+
+$$\,$$
+
+
+# Introduction
+
+**Frequentist paradigm**
+
+$$\,$$
+
+* Parameters are fixed but unknown.
+
+$$\,$$
+
+* Probabilities are always interpreted as long run relative frequency.
+
+$$\,$$
+
+* Procedure is judged by how well they perform in the long run over an infinite number of hypothetical repetitions of the experiment.
+
+
+# Introduction
+
+**Bayesian paradigm**
+
+$$\,$$
+
+* Parameters are considered to be random variables.
+
+$$\,$$
+
+* Probability statements about parameters must be interpreted as "degrees of belief".
+
+$$\,$$
+
+* We revise our beliefs about parameters after getting the data by using Bayes theorem.
+
+$$\,$$
+
+* Yields posterior parameter distribution - for this particular dataset.
+
+
+#
+
+$$\,$$
+$$\,$$
+**PROBABILITY THEORY**
+
+# Probability theory
+
+This section is largely based on and in places quoted verbatim from
+
+$$ \, $$ 
+
+Feelders, Ad J. (2007), 'Statistical Concepts', in Berthold, M., Hand, D.J. (eds.) *Intelligent Data Analysis*, 2^nd^ ed., Springer, pp.17-68
+
+
+# Probability theory: Random experiments
+
+A **random experiment** is an experiment that satisfies the following conditions:
+
+1. \ All possible outcomes are known in advance.
+2. \ In any particular trial, the outcome is not known in advance.
+3. \ The experiment can be repeated under identical conditions.
+
+The **outcome space** or **universe** $\Omega$ of an experiment is the set of all possible outcomes of the experiment.
+
+Examples
+
+* In the coin tossing experiment earlier $\Omega=\{H,T\}$. 
+* When you roll a die $\Omega=\{1,2,3,4,5,6\}$.
+
+
+# Probability theory: Random experiments
+
+An **event** is a subset of the outcome space.
+
+Examples
+
+* "Coin lands head": $A = \{x\in\Omega | \,x\mbox{ is heads}\} = \{H\}$
+* "Die shows even number": $B = \{x\in\Omega | \,x\mbox{ is even}\} = \{2,4,6\}$
+
+Special events
+
+* Impossible / empty event: $A = \emptyset$ 
+* Sure event / outcome space: $A = \Omega$
+* Singleton events: $A = \{H\}$, $A = \{3\}$
+* The complementary event: $\bar{A}=\Omega\setminus A$
+
+
+# Probability theory: Probability
+
+*Classical definition* of probability:
+
+Let $|.|$ denote the operator measuring the size of an event. The **probability** of an event $A\subseteq\Omega$ is defined as
+$$P(A)=\frac{|A|}{|\Omega|}$$
+
+If all outcomes in $\Omega$ are equally likely, then this means the probability of $A$ is the ratio of the number of outcomes in $A$ and the number of outcomes in $\Omega$.
+
+If your outcome space is not discrete, then $|.|$ is a function mapping outcome sets to the positive real line.
+
+
+# Probability theory: Probability
+
+*Frequency definition* of probability:
+
+It is supposed an experiment is repeated $k$ times, producing an outcome $o_i$ during the i^th^ run. Probability is the defined as the long-run relative frequency:
+
+$$\,$$
+
+$$P(A)=\mbox{lim}_{k\rightarrow\infty}\frac{\sum_i I(o_i\in A)}{k}$$
+where $I(.)$ is the indicator function (1 if its argument is true, 0 otherwise).
+
+
+# Probability theory: Probability
+
+*Subjective definition* of probability:
+
+According to this definition, probability is a measure of the degree of belief that an event $A$ will occur.
+
+Degree of belief depends on the person who has the belief, so with this definition the probability $P(A)$ can be different for different people.
+
+$$\,$$
+
+The subjective definition of probability allows expressing all uncertainty through probability - this is important for Bayesian statistics.
+
+
+# Probability theory: Probability
+
+Probability as a mathematical concept was formally introduced in the 17^th^ century by French mathematicians **Blaise Pascal** and **Pierre de Fermat** when they were discussing games of chance.
+
+$$ \, $$
+
+The formal, mathematical derivation of probability theory follows from set theory and measure theory.
+
+
+# Probability theory: Probability
+
+:::::: {.columns}
+::: {.column width="50%"}
+![Blaise Pascal (public domain / Wikipedia)](images/pascal.jpg)
+:::
+
+::: {.column width="50%"}
+![Pierre de Fermat (public domain / Wikipedia)](images/fermat.jpg)
+:::
+::::::
+
+
+# Probability theory: Probability axioms
+
+Probability (whether according to the classical, frequency or subjective definition) is a function $P(.)$ from subsets $A$ of $\Omega$ to the real line satisfying the following axioms:
+
+$$ \, $$
+$$ \, $$ 
+
+1. \ $P(A)\geq0$, $\forall A \subseteq\Omega$
+2. \ if $A\cap B=\emptyset$, then $P(A\cup B) = P(A) + P(B)$, $\forall A,B\subseteq\Omega$
+3. \ $P(\Omega)=1$
+
+$$ \, $$ 
+
+Everything else in probability theory is derived from these 3 axioms.
+
+
+# Probability theory: Conditional probability
+
+The probability of an event $B$ can be influenced by information about the occurrence of an event $A$. The **conditional probability** of $B$ given $A$, denoted $P(B|A)$, is defined as the probability of event $B$ given that $A$ has occurred. For $P(A)>0$:
+
+$$P(B|A) = \frac{P(A\cap B)}{P(A)}$$
+
+Intuitively: $A$ is the new, **reduced** universe / outcome space $\Omega_r$. The division by $P(A)$ guarantees that the conditional distribution sums / integrates to 1, i.e. is a valid probability distribution.
+
+From the conditional probability, we can derive the **multiplication rule**:
+
+$$P(A\cap B)=P(B|A)\cdot P(A)$$
+
+
+# Probability theory: Conditional probability
+
+```{r, echo=F}
+theta<-seq(0,2*pi,length=500)
+r1<-0.22
+r2<-0.32
+
+plot(type="n",axes=F,xlab="",ylab="",c(0,1),c(0,1))
+box(col="darkgrey",lwd=2)
+text(0.05,0.05,labels=expression(Omega),col="darkgrey",cex=5)
+lines(0.3+r1*cos(theta),0.6+r1*sin(theta),col="darkgrey",lwd=2)
+text(0.12,0.85,labels="B",col="darkgrey",cex=4)
+lines(0.5+r2*cos(theta),0.4+r2*sin(theta),col="black",lwd=2)
+text(0.8,0.08,labels=expression(paste(sep="","A=",Omega[r])),col="black",cex=4)
+text(0.38,0.55,labels=expression(paste(sep="","A",intersect(),"B")),cex=4,col="black")
+theta2<-seq(337*pi/256,2*pi,length=200)
+theta3<-seq(0,9*pi/50,length=200)
+lines(0.3+r1*cos(theta2),0.6+r1*sin(theta2),col="black",lwd=2)
+lines(0.3+r1*cos(theta3),0.6+r1*sin(theta3),col="black",lwd=2)
+```
+
+
+
+# Probability theory: independence
+
+Events $A$ and $B$ are said to be **independent**  if the occurrence of one event does not influence the probability of occurrence of the other event.
+
+$$ \, $$
+
+$$P(A|B)=P(A)$$
+$$P(B|A)=P(B)$$
+
+$$ \, $$
+
+This can more concisely be expressed as:
+
+$$P(A\cap B)=P(A)P(B)$$
+
+
+# Probability theory: Law of Total Probability
+
+We define events $B_1,B_2,\ldots,B_n\subseteq\Omega$ to form a **partition** of $\Omega$ if 
+
+$$\,$$
+
+* $B_i\cap B_j=\emptyset$, $\forall i\neq j$
+* $\bigcup_{i=1}^n B_i = \Omega$
+
+$$\,$$
+
+From the probability axioms it follows that, for any event $A\subseteq\Omega$:
+
+$$P(A) = \sum_{i=1}^n {P(A|B_i)\,P(B_i)}=\sum_{i=1}^n {P(A\cap B_i)}$$
+$$\,$$
+
+This is known as the **Theorem of Total Probability**.
+
+
+# Probability theory: Law of Total Probability
+
+```{r, echo=F}
+theta<-seq(0,2*pi,length=500)
+r<-0.32
+
+plot(type="n",axes=F,xlab="",ylab="",c(0,1),c(0,1))
+box(col="darkgrey",lwd=2)
+text(0.05,0.05,labels=expression(Omega),col="darkgrey",cex=5)
+lines(0.5+r*cos(theta),0.4+r*sin(theta),col="black",lwd=2)
+text(0.8,0.7,labels=expression(paste(sep="","A=",Omega[r])),col="black",cex=4)
+segments(x0=0.5,y0=0.4,x1=0.5,y1=0.4+r,col="black",lwd=2)
+segments(x0=0.5,y0=0.4,x1=0.5-r,y1=0.4,col="black",lwd=2)
+segments(x0=0.5,y0=0.4,x1=0.5+r*cos(7*pi/4),y1=0.4+r*sin(7*pi/4),col="black",lwd=2)
+segments(x1=0.5,y1=2,x0=0.5,y0=0.4+r,col="darkgrey",lwd=2)
+segments(x1=-1,y1=0.4,x0=0.5-r,y0=0.4,col="darkgrey",lwd=2)
+segments(x1=0.5+5*cos(7*pi/4),y1=0.4+5*sin(7*pi/4),x0=0.5+r*cos(7*pi/4),y0=0.4+r*sin(7*pi/4),col="darkgrey",lwd=2)
+text(expression(B[1]),x=0.9,y=0.2,col="darkgrey",cex=4)
+text(expression(B[2]),x=0.2,y=0.8,col="darkgrey",cex=4)
+text(expression(B[3]),x=0.15,y=0.2,col="darkgrey",cex=4)
+text(expression(paste(sep="","A",intersect(),B[1])),x=0.65,y=0.5,col="black",cex=4)
+text(expression(paste(sep="","A",intersect(),B[2])),x=0.35,y=0.5,col="black",cex=4)
+text(expression(paste(sep="","A",intersect(),B[3])),x=0.45,y=0.25,col="black",cex=4)
+```
+
+
+# Probability theory: Law of Total Probability
+
+Example:
+
+A box contains 4 balls: 3 white, 1 red.
+
+First draw one ball at random. Then, without replacing the first ball, draw a second ball from the box.
+
+What is the probability that the second ball is a red ball?
+
+
+# Probability theory: Law of Total Probability
+
+This is most easily calculated using the TTP.
+
+$$\,$$
+
+Let $R_1, R_2$ be the event of drawing a red ball on the first / second draw, and similarly for $W_1, W_2$.
+
+Note that $\bar{R}_1=W_1$, and hence $R_1, W_1$ form a parition of $\Omega$.
+
+$$\,$$
+
+$$P(R_2)=P(R_2|W_1)P(W_1)+P(R_2|R_1)P(R_1)=\frac{1}{3}\cdot\frac{3}{4}+0\cdot\frac{1}{4}=\frac{1}{4}$$
+
+
+# Probability theory: Bayes' Rule
+
+Bayes' Theorem shows how probabilities change in light of evidence:
+
+$$\,$$
+
+$$P(B|A)=\frac{P(A|B)P(B)}{P(A)}$$
+$$\,$$
+
+And for a partition $B_1,\ldots,B_n$ of $\Omega$:
+$$P(B_i|A)=\frac{P(A|B_i)P(B_i)}{\sum_j{P(A|B_j)P(B_j)}}$$
+
+$$\,$$
+
+Bayes' Rule really just rewrites the conditional probability using the multiplication rule (numerator) and the Theorem of Total Probability (denominator).
+
+
+# Probability theory: Bayes' Rule
+
+Bayes' Rule was first formulated by an 18^th^ century English clergyman, Thomas Bayes, it was only published after his death.
+
+$$\,$$
+
+While Bayes' Rule is important for Bayesian statistics, it is a result from probability theory and useful win both Bayesian and frequentist statistics.
+
+
+# Probability theory: Bayes' Rule
+
+![(probably not) Thomas Bayes (public domain / Wikipedia)](images/bayes.gif)
+
+
+# Probability theory: Bayes' Rule
+
+Example: diagnostic test
+
+Disease $D$, with $P(D)=0.001$, i.e. occurs only in $0.1\%$ of the population.
+
+There is a diagnostic test, which can give a positive ($T$) or negative ($\bar{T}$) result. The diagnostic test has $95\%$ sensitivity (i.e. $P(T|D)=0.95$) and $98\%$ specificity (i.e. $P(\bar{T}|\bar{D})=0.98$).
+
+$$\,$$
+
+What is the probability that a patient has the disease if the test result is positive?
+
+
+# Probability theory: Bayes' Rule
+
+Note that $D, \bar{D}$ is a partition of the outcome space.
+
+$$\,$$
+
+Apply Bayes's Rule:
+$$
+\begin{align}
+P(D|T) &= \frac{P(T|D)P(D)}{P(T|D)P(D)+P(T|\bar{D})P(\bar{D})} \\
+       &= \frac{0.95\cdot 0.001}{0.95\cdot 0.001 + (1-0.98)\cdot(1-0.001)} \\
+       &= 0.0454
+\end{align}
+$$
+
+
+# Probability theory: Bayes' Rule
+
+Note that:
+
+$$P(D|T)\propto P(T|D)\cdot P(D)$$
+where:
+
+ * $P(D|T)$ is the **posterior** probability
+ 
+ * $P(T|D)$ is the **likelihood**
+ 
+ * $P(D)$ is the **prior** probability
+ 
+We can consider $P(T)$ (the denominator) to be just a constant to schale $P(D|T)$ so that it is a valid distribution.
+
+
+
+# Probability theory: Random variables
+
+A **random variable** $X$ is a function from the outcome space $\Omega$ to the real line:
+$$X:\Omega\rightarrow \mathbb{R}$$
+$$ \, $$
+
+Example:
+Consider the experiment of tossing a coin 2 times:
+$$\Omega=\{(H,H),(H,T),(T,H),(T,T)\}$$
+The number of heads turning up is a random variable $X$:
+
+$$X((H,H))=2$$
+$$X((H,T))=1$$
+$$X((T,H))=1$$
+$$X((T,T))=0$$
+
+
+# Probability theory: Random variables - probability distribution
+
+A **probability mass function** (pmf) $p$ assigns to each realisation $x$ of a *discrete* random variable X the probability $P(X=x)=p(x)$.
+
+$$\,$$
+
+It follows from the axioms of probability that $p(x)\geq0$ and $\sum_{x}{p(x)} = 1$.
+
+```{r, echo=F}
+df<-tibble(x=0:10,pmf=dbinom(0:10,size=10,prob=0.5))
+
+ggplot(data=df,mapping=aes(x=x,y=pmf)) +
+  geom_bar(stat="identity") +
+  xlab("number of heads") + ylab("probability mass") +
+  ggtitle("pmf of the random variable counting numbers of H in 10 coin tosses") +
+  scale_x_continuous(breaks=0:10) +
+  coord_cartesian(xlim=c(0,10)) +
+  theme(text = element_text(size=20))
+```
+
+# Probability theory: Random variables - probability distribution
+
+What about continuous random variables?
+$$\,$$
+For a continuous random variable $X$, $P(X=x)=0$ for all values of x (the probability of *exactly* realising one value among an infinity of possible values is 0). Hence it makes little sense to define a pmf.
+
+## Random variables: probability distribution
+
+Instead, we will define probabilities as areas under a curve. A **probability density function** (pdf) is a function $p:\mathbb{R}\rightarrow\mathbb{R}^+$ so that
+
+$$P(a<X\leq b)=\int_a^bp(x)dx$$
+
+# Probability theory: Random variables - probability distribution
+
+It follows from the axioms of probability that $p(x)\geq0$ and $\int_{-\infty}^{\infty}{p(x)dx} = 1$.
+
+$$\,$$
+Note that while the axioms of probability imply that in the discrete case, a pmf satisfies $p(x)\leq1$, in the continuous case, a pdf $p(x)$ does not have to be bounded above by 1.
+
+```{r, echo=F}
+x<-seq(-4,4,by=0.01)
+xArea <- seq(-2,0.5,by=0.01)
+yArea <- dnorm(xArea)
+
+par(mar=c(5,5,5,1))
+plot(x, dnorm(x), main="pdf of the standard normal", xlab="x", ylab="density", type="l", cex.lab=2.5,cex.axis=2.5,cex.main=2.5) 
+polygon(c(-2,xArea,0.5),c(0,yArea,0),col='steelblue',lty=0)
+text(cex=2.5,"P(-2<X<0.5)=0.67",x=-2.5,y=0.25,col="steelblue")
+```
+
+
+# Probability theory: Random variables - probability distribution
+
+Example:
+
+If we have the pdf given by
+
+$$
+p(x)=\begin{cases}
+ 2 & \mbox{ for } 0\leq x\leq 0.5 \\
+ 0 & \mbox{ otherwise}
+\end{cases}
+$$
+Then it follows that
+$$P(0.1<X\leq0.3)=\int_{0.1}^{0.3}2dx=[2x]_{0.1}^{0.3}=0.6-0.2=0.4$$
+
+```{r, echo=F}
+x<-seq(-0.25,0.75,by=0.001)
+xArea <- seq(0.1,0.3,by=0.01)
+yArea <- dunif(xArea,min=0,max=0.5)
+
+par(mar=c(5,5,5,1))
+plot(x, dunif(x,min=0,max=0.5), main="pdf of uniform distribution", xlab="x", ylab="density", type="l", cex.lab=2.5,cex.axis=2.5,cex.main=2.5,ylim=c(0,2.25)) 
+polygon(c(0.1,xArea,0.3),c(0,yArea,0),col='steelblue',lty=0)
+text(cex=2.5,"P(0.1<X<0.3)=0.4",x=0.2,y=2.1,col="steelblue")
+```
+
+
+# Probability theory: Random variables - expectation & variance
+
+What is the expected or average / mean value for a given distribution? Let us define the **expectation** or the **mean** of a random value.
+
+Discrete random variables:
+$$E(X)=\sum_{x}{x\,p(x)}$$
+Continuous random variables:
+$$E(X)=\int_{-\infty}^{\infty}{x\,p(x)\,dx}$$
+Notation:
+$$\mu=E(X)$$
+
+
+# Probability theory: Random variables - expectation & variance
+
+We can also compute expectations for arbitrary functions $h:\mathbb{R}\rightarrow\mathbb{R}$ of a random variable:
+
+$$\,$$
+
+$$
+E(h(X))=\begin{cases}
+\sum_x{h(x)\,p(x)} &\mbox{ if }x\mbox{ is discrete} \\
+\int_{-\infty}^{\infty}{h(x)\,p(x)\,dx} &\mbox{ if }x\mbox{ is continuous}
+\end{cases}
+$$
+
+
+# Probability theory: Random variables - expectation & variance
+
+One special case of such a function $h$ is $h(x)=(x-\mu)^2$ and is used to define the variance of a random variable.
+
+The **variance** $Var(X)=\sigma^2$ of a random variable $X$ is defined as spread around the mean and obtained by averaging the squared differences $(x-\mu)^2$.
+$$
+\begin{align}
+\sigma^2 &=& E[(X-\mu)^2] \\
+         &=& E[(X-E(X))^2]
+\end{align}
+$$
+The **standard deviation** $\sigma$ has the advantage of being on the same scale as $X$.
+
+
+# Probability theory: Random variables - conditional distributions
+
+Discrete case:
+$$p(x|C)=P(X=x|C)=\frac{P(\{X=x\}\cap C)}{P(C)}$$
+$$\,$$
+Continuous case:
+$$
+p(x|C) = 
+\begin{cases}
+p(x)/P(C) &\mbox{ for }x\in C \\
+0         &\mbox{ otherwise}
+\end{cases}
+$$
+
+# Probability theory: Random variables - joint distributions
+
+A pair of random variables $(X,Y)$ will have a joint distribution and this is uniquely determined by their **joint probability function** $p:\mathbb{R}^2\rightarrow\mathbb{R}$.
+
+Discrete case:
+$$p(x,y) = P((X,Y)=(x,y)) = P(X=x, Y=y)$$
+
+From the axioms of probability: $p(x,y)\geq0$ and $\sum_x\sum_y p(x,y) = 1$.
+
+Continuous case:
+$$P(a<X\leq b,c<Y\leq d) = \int_a^b\int_c^d p(x,y)dxdy$$
+
+From the axioms of probability: $p(x,y)\geq0$ and $\int_{-\infty}^{\infty}\int_{-\infty}^{\infty} p(x,y)\,dxdy = 1$.
+
+
+# Probability theory: Random variables - marginal distribution
+
+The **marginal distribution function** of X can be obtained from the joint distribution function by summing (discrete case) or integrating (continuous case) over Y.
+
+$$\,$$
+Discrete case:
+$$p_X(x)=P(X=x)=\sum_y P((X,Y)=(x,y))=\sum_y p(x,y)$$
+$$\,$$
+Continuous case:
+$$p_X(x)=\int_{-\infty}^{\infty}p(x,y)\,dy$$
+
+$$\,$$
+
+
+# Probability theory: Random variables - conditional distribution
+
+We can define the **conditional** distribution function of X given Y.
+
+$$\,$$
+$$p(x|y)=\frac{p(x,y)}{p_Y(y)}$$
+
+$$\,$$
+As before for events, we define random variables $X,Y$ to be **independent** if
+$$p(x,y)=p_X(x)p_Y(y)\mbox{ for all }(x,y)$$
+
+
+# Probability theory: Random variables
+
+All the previous definitions and theorems also apply to probability mass and density functions.
+
+For discrete random variables, this is obvious as the probability mass function simply specifies probabilities.
+
+For continuous random variables, these follow from the definitions of joint, conditional and marginal distribution functions.
+
+
+# Probability theory: Bayes' Rule
+
+$$\,$$
+
+Let $X,Y$ be 2 random variables. Then
+
+$$\,$$
+
+$p_{X|Y=y}(x|y)=\frac{f_{Y|X=x}(y|x)f_X(x)}{f_Y(y)}$
+
+
+# Probability theory: exchangability & independence
+
+Given a dataset $\{x_i,\ldots,x_n\}$, let $p(x_1,\ldots,x_n)$ be the joint probability density or mass function of $X_1,\ldots,X_n$.
+$$\,$$
+
+If $p(x_1,\ldots,x_n)=p(x_{\pi_1},\ldots,x_{\pi_n})$ for all permutations $\pi$ of $1,\dots,n$, then $X_1,\ldots,X_n$ are **exchangeable**.
+$$\,$$
+
+The subscript contains no information about the outcomes.
+
+
+# Probability theory: exchangability & independence
+
+$$\,$$
+
+An important result is
+$$\,$$
+
+$$
+X_1,\ldots,X_n\mbox{ are exchangeable for all }n\iff\begin{cases}
+& X_1,\ldots,X_n|\theta\mbox{ are i.i.d.} \\
+& \theta\sim p(\theta)
+\end{cases}
+$$
+
+$$\,$$
+
+Unless specified otherwise we will always assume exchangeability.
+
+
+#
+
+[end of STA6206 Bayesian Data analysis Session 1]
