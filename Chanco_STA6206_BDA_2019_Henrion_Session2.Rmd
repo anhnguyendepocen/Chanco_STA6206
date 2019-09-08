@@ -743,6 +743,10 @@ $$\,$$
 
 You may struggle with the prior distribution: how do you decide what is a good prior distribution?
 
+A good solution is to ask experts in the field you are working in. You can even combine priors from several experts through a mixture distribution of priors and this also allows you to specify different weights for different expert.
+
+However, experts are not always available...
+
 
 # Prior distributions: informative & non-informative priors
 
@@ -799,12 +803,14 @@ If we have no prior knowledge at all, you could also argue that all values of $\
 
 A prior distribution which expresses only general or vague information about a parameter is called **non-informative** or **diffuse prior**.
 
+Note that assuming all possible values for a parameter to be equally likely is not, strictly speaking, equivalent to being completely ignorant.
+
 Note: Beta(1,1) = Uniform(0,1).
 
 
 # Prior distributions: informative & non-informative priors
 
-How do you come up with a uninformative prior?
+How do you come up with a non-informative prior?
 
 Easy in the case of the discrete or continuous uniform distribution, but this does not work for discrete distributions with an infinity of possible values or a continuous distributions over an open-ended interval.
 
@@ -815,19 +821,18 @@ Such priors are called **weakly informative** and are very useful for regularisa
 
 # Prior distributions: Jeffreys prior
 
-Sir Harold Jeffreys devised a general rule for generating an objective or noninformative priors for a sampling model $p(y|\theta)$. The **Jeffreys prior** is given by
+Sir Harold Jeffreys devised a general rule for generating an objective or non-informative priors for a sampling model $p(y|\theta)$. The **Jeffreys prior** is given by
 
-$$\,$$
 
 $$p_J(\theta)\propto \sqrt{I(\theta)}$$
-
-$$\,$$
 
 where $I(\theta)=-E\left[\left.\frac{\delta^2}{\delta\theta^2}\log\, p(X|\theta)\right|\theta\right]$ is the *Fisher information*.
 
 $$\,$$
 
 This can lead to prior distributions which are not actually probability distributions. These are called **improper priors** (see practical).
+
+An important property of Jeffreys priors is that they are invariant under transformation.
 
 # Prior distributions: Jeffreys prior
 
