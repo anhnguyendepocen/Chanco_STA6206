@@ -523,11 +523,10 @@ What about continuous random variables?
 $$\,$$
 For a continuous random variable $X$, $P(X=x)=0$ for all values of x (the probability of *exactly* realising one value among an infinity of possible values is 0). Hence it makes little sense to define a pmf.
 
-## Random variables: probability distribution
-
 Instead, we will define probabilities as areas under a curve. A **probability density function** (pdf) is a function $p:\mathbb{R}\rightarrow\mathbb{R}^+$ so that
 
 $$P(a<X\leq b)=\int_a^bp(x)dx$$
+
 
 # Probability theory: Random variables - probability distribution
 
@@ -631,9 +630,9 @@ $$
 
 # Probability theory: Random variables - joint distributions
 
-A pair of random variables $(X,Y)$ will have a joint distribution and this is uniquely determined by their **joint probability function** $p:\mathbb{R}^2\rightarrow\mathbb{R}$.
+A pair of random variables $(X,Y)$ will have a joint distribution and this is uniquely determined by their **joint probability function** $p:\mathbb{R}^2\rightarrow\mathbb{R}_+$.
 
-Discrete case:
+Discrete case (in this case: $p:\mathbb{R}^2\rightarrow[0,1]$):
 $$p(x,y) = P((X,Y)=(x,y)) = P(X=x, Y=y)$$
 
 From the axioms of probability: $p(x,y)\geq0$ and $\sum_x\sum_y p(x,y) = 1$.
@@ -692,7 +691,7 @@ $p_{X|Y=y}(x|y)=\frac{f_{Y|X=x}(y|x)f_X(x)}{f_Y(y)}$
 
 # Probability theory: exchangability & independence
 
-Given a dataset $\{x_i,\ldots,x_n\}$, let $p(x_1,\ldots,x_n)$ be the joint probability density or mass function of $X_1,\ldots,X_n$.
+Given a dataset $\{x_1,\ldots,x_n\}$, let $p(x_1,\ldots,x_n)$ be the joint probability density or mass function of $X_1,\ldots,X_n$.
 $$\,$$
 
 If $p(x_1,\ldots,x_n)=p(x_{\pi_1},\ldots,x_{\pi_n})$ for all permutations $\pi$ of $1,\dots,n$, then $X_1,\ldots,X_n$ are **exchangeable**.
