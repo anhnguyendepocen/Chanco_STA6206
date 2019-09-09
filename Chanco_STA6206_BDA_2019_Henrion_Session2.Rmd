@@ -1132,9 +1132,16 @@ where $\theta$ is the unknown parameter and $t(y)$ is the sufficient statistic f
 
 # Conjugate priors for exponential family distributions
 
+$$\,$$
+
 A general conjugate prior for a one-parameter exponential family sampling model is given by
 
+$$\,$$
+
 $$p(\theta|n_0,t_0)=\kappa(n_0,t_0)c(\theta)^{n_0}e^{n_0t_0\theta}$$
+
+
+# Conjugate priors for exponential family distributions
 
 Given observed data for i.i.d. variables $Y_1,\ldots,Y_n$, the posterior is then
 
@@ -1148,6 +1155,8 @@ p(\theta|y_1,\ldots,y_n) &\propto& p(\theta)p(y_1,\ldots,y_n|\theta) \\
 \end{align}
 $$
 
+$$\,$$
+
 Note: $n_0\approx$ "prior sample size", $t_0\approx$ "prior guess of $t(Y)$".
 
 
@@ -1159,7 +1168,18 @@ Two-parameter (location $\theta$ and scale $\phi$) exponential family distributi
 
 $$f(y|\theta,\phi)=exp\left(\frac{y\theta-b(\theta)}{a(\phi)}+c(y,\phi)\right)$$
 
-Convince yourself this is the same thing:
+Convince yourself this is the same thing!
+
+
+# Conjugate priors for exponential family distributions
+
+As an aside, recall from STA6103:
+
+Two-parameter (location $\theta$ and scale $\phi$) exponential family distributions
+
+$$f(y|\theta,\phi)=exp\left(\frac{y\theta-b(\theta)}{a(\phi)}+c(y,\phi)\right)$$
+
+Convince yourself this is the same thing!
 
 * set $a(\phi)=1$ (effectively get rid of this parameter)
 
@@ -1168,6 +1188,24 @@ Convince yourself this is the same thing:
 * set $-b(\theta)=\log\, c(\theta)$
 
 * set $y=t(y)$
+
+
+# Priors - how to choose them
+
+* The shape of the prior shows the “belief weights” we give for all possible values before we look at the data.
+
+* The prior **must not** come from the data. The posterior is proportional to $prior \,\times\, likelihood$. The multiplication means the prior and likelihood must be independent!
+
+* If you don’t want to favor any one value over another, use a non-informative or diffuse prior, e.g. the uniform prior.
+
+* The choice of prior is not crucial. All priors that have reasonable probability over the realistic range of the data will have quite similar posteriors. We have seen that with enough data, the likelihood will have the greater contribution to the posterior. Priors can , however, restrict the range of the posterior distribution.
+
+
+# Priors - how to choose them (cont'd)
+
+* Conjugate priors simplify calculations greatly as the posterior will be of the same family.
+
+* So identify the family of conjugate priors for your sampling model, then pick the one with a distribution function whose shape matches your beliefs closest.
 
 
 #
