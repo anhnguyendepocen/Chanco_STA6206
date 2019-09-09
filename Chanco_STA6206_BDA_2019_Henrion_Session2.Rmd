@@ -163,7 +163,7 @@ $$f_{\Theta|\mathbf{Y}=\mathbf{y}}(\theta|\mathbf{y})=\frac{f_\mathbf{Y}(\mathbf
 
 # Bayesian inference
 
-It is important to note that the denominator (the evidence) is fixed for a given dataset, i.e. it is constant. It normalises the posterior distrbiution so that it sums (pmf) / integrates (pdf) to 1 -- this is a requirement for the posterior to be a valid probability distribution.
+It is important to note that the denominator (the evidence) is fixed for a given dataset, i.e. it is constant. It normalises the posterior distribution so that it sums (pmf), resp. integrates (pdf), to 1 -- this is a requirement for the posterior to be a valid probability distribution.
 
 $$\,$$
 
@@ -295,7 +295,7 @@ $$\,$$
 Recall $Y\sim\mbox{Bin}(n,\pi)$ for parameters $n\in\{0,1,2,\ldots\}$ and $\pi\in[0,1]$ if
 
 $$p(Y=k|\pi)=\begin{cases}
-\binom{n}{k}\pi^k(1-\pi)^{n-k} \; & \mbox{if} k\in\{0,1\ldots,n\}\\
+\binom{n}{k}\pi^k(1-\pi)^{n-k} \; & \mbox{if } k\in\{0,1\ldots,n\}\\
 0                                 & \mbox{otherwise}
 \end{cases}$$
 
@@ -358,7 +358,7 @@ $$\,$$
 $$p(k=2|\pi)=\binom{6}{2}\cdot\pi^2\cdot(1-\pi)^4$$
 $$\,$$
 
-find the posterior distribution $p(\pi|k=4)$.
+find the posterior distribution $p(\pi|k=2)$.
 
 
 # Example (cont'd)
@@ -850,15 +850,15 @@ $$\,$$
 
 $$
 \begin{align}
-\frac{\delta}{\delta\theta}\log\, p(Y=y|\theta) &=& \frac{\delta}{\delta\theta}\log\left(\binom{n}{y}\theta^x(1-\theta)^{n-y}\right) \\
+\frac{\delta}{\delta\theta}\log\, p(Y=y|\theta) &=& \frac{\delta}{\delta\theta}\log\left(\binom{n}{y}\theta^y(1-\theta)^{n-y}\right) \\
                                                 &=& \frac{\delta}{\delta\theta}\left[\log\binom{n}{y}+y\log\theta+(n-y)\log(1-\theta)\right] \\
-                                                &=& \frac{y}{\theta}-\frac{n-y}{(1-\theta)^2}
+                                                &=& \frac{y}{\theta}-\frac{n-y}{1-\theta}
 \end{align}
 $$
 
 and so
 
-$$\frac{\delta^2}{\delta\theta^2}\log\,p(y|\theta)=-\frac{y}{\theta^2}-\frac{n-y}{1-\theta}$$
+$$\frac{\delta^2}{\delta\theta^2}\log\,p(y|\theta)=-\frac{y}{\theta^2}-\frac{n-y}{(1-\theta)^2}$$
 
 # Prior distributions: Jeffreys prior
 
@@ -866,7 +866,7 @@ Hence:
 
 $$\,$$
 
-$$J(\theta)=-E\left[-\frac{x}{\theta^2}-\frac{n-y}{1-\theta}\right]=\frac{E[Y|\theta]}{\theta^2}+\frac{n-E[Y|\theta]}{(1-\theta)^2}$$
+$$J(\theta)=-E\left[-\frac{y}{\theta^2}-\frac{n-y}{1-\theta}\right]=\frac{E[Y|\theta]}{\theta^2}+\frac{n-E[Y|\theta]}{(1-\theta)^2}$$
 
 $$\,$$
 
@@ -874,7 +874,7 @@ Note that $Y\sim Bin(n,\theta)\Rightarrow E[Y|\theta]=n\theta$:
 
 $$\,$$
 
-$$J(\theta)=\frac{n\theta}{\theta^2}+\frac{n-n\theta}{(1-\theta)^2}=\frac{n}{\theta}+\frac{n}{1-\theta}=\frac{n}{\theta(-1\theta)}$$
+$$J(\theta)=\frac{n\theta}{\theta^2}+\frac{n-n\theta}{(1-\theta)^2}=\frac{n}{\theta}+\frac{n}{1-\theta}=\frac{n}{\theta(1-\theta)}$$
 
 # Prior distributions: Jeffreys prior
 
@@ -882,9 +882,9 @@ Therefore:
 
 $$p_J(\theta)\propto\sqrt{\frac{n}{\theta(1-\theta)}}$$
 In other words:
-$$p_J(\theta)\propto\theta^{1/2}(1-\theta)^{1/2}$$
+$$p_J(\theta)\propto\theta^{-1/2}(1-\theta)^{-1/2}$$
 
-If $\theta\sim \mbox{Beta}\left(\frac{1}{2},\frac{1}{2}\right)$, then $p(\theta)=\frac{\Gamma(1)}{\Gamma\left(\frac{1}{2}\right)\Gamma\left(\frac{1}{2}\right)}\theta^{1/2}(1-\theta)^{1/2}$.
+If $\theta\sim \mbox{Beta}\left(\frac{1}{2},\frac{1}{2}\right)$, then $p(\theta)=\frac{\Gamma(1)}{\Gamma\left(\frac{1}{2}\right)\Gamma\left(\frac{1}{2}\right)}\theta^{-1/2}(1-\theta)^{-1/2}$.
 
 Therefore, if $X\sim Bin(n,\theta)$, then the Jeffreys prior distribution for $\theta$ is a Beta$\left(\frac{1}{2},\frac{1}{2}\right)$ distribution. This prior is proper.
 
@@ -1019,7 +1019,7 @@ p(\lambda|y_i,\ldots,y_n) & \propto & p(\lambda) \, p(y_1,\ldots,y_n|\lambda) \\
 \end{cases}
 $$
 
-If we want $p(\lambda)$ to be conjugate for the Poisson sampling model, i.e. we want $p(\lambda|y_1,\ldots,y_n)$ to be in the same family of distributions as $p(\lambda)$, then the above implies that $p(\lambda)$ needs to include terms of the form $\lambda^c_1e^{-c_2\lambda}$.
+If we want $p(\lambda)$ to be conjugate for the Poisson sampling model, i.e. we want $p(\lambda|y_1,\ldots,y_n)$ to be in the same family of distributions as $p(\lambda)$, then the above implies that $p(\lambda)$ needs to include terms of the form $\lambda^{c_1}e^{-c_2\lambda}$.
 
 
 # Example (cont'd)
