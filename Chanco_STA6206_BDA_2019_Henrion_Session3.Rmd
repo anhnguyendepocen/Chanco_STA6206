@@ -275,6 +275,14 @@ $$\,$$
 For this reason, maximum a posterior density estimation is often considered an alternative to Bayes estimation.
 
 
+#
+
+$$\,$$
+$$\,$$
+
+**CREDIBLE INTERVALS**
+
+
 # Bayesian estimation: Credible intervals
 
 $$\,$$
