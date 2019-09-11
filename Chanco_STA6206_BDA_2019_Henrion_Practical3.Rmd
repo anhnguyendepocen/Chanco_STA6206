@@ -73,7 +73,7 @@ Further, compute:
 
 * $P(\pi>0.5|k)$
 
-* For the following 2 hypotheses: $H_1:\theta\in[0.3,0.5], H_2:\theta\in[0.5,0.7]$, compute the prior and posterior odds and calculate the Bayes factor.
+* For the following 2 hypotheses: $H_1:\pi\in[0.3,0.5], H_2:\pi\in[0.5,0.7]$, compute the prior and posterior odds and calculate the Bayes factor.
 
 
 # Exercise 3
