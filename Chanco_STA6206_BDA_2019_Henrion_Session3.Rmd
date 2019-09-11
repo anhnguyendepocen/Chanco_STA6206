@@ -1,0 +1,458 @@
+---
+title: "STA6206 - Bayesian Data Analysis - Session 3"
+author: "Marc Henrion"
+date: "11 September 2019"
+header-includes:
+   - \usepackage{amsmath}
+output:
+  powerpoint_presentation:
+    reference_doc: MlwChanco_Template.pptx
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = TRUE, fig.width=16, fig.height=9, dpi=300, highlight=T)
+
+require(tidyverse)
+require(knitr)
+require(gridExtra)
+require(kableExtra)
+
+require(HDInterval)
+```
+
+
+# Preliminaries
+
+* These notes were written in `R markdown`.
+
+* All examples / code in these notes is `R` and a combination of STAN / JAGS / BUGS for Bayesian model specification.
+
+* GitHub repository - will contain all course materials by the end of the week:
+
+  <https://github.com/gitMarcH/Chanco_STA6206>
+
+#
+
+## Session 3: Bayesian estimation
+
+$$\,$$
+
+Some references for Bayesian statistics / data analysis are:
+
+1. Hoff, P.D. (2009). "*A First Course in Bayesian Statistical Methods*." Springer.
+
+2. Gelman, A., Carlin, J.B., Stern, H.S., Dunson, D.B., Vehtari, A., Rubin, D.B. (2014). "*Bayesian Data Analysis*". 3^rd^ ed. CRC Press.
+
+3. Ramoni, M., Sebastiani, P. (2007), 'Bayesian Methods', in Berthold, M., Hand, D.J. (eds.). "*Intelligent Data Analysis*", 2^nd^ ed., Springer, pp.131-168
+
+4. Stone, J.V. (2013). "*Bayes' Rule: A Tutorial Introduction to Bayesian Analysis*". Sebtel Press.
+
+
+# Notation
+
+* $X, Y, Z$ - random variables
+
+* $x, y, z$ - measured / observed values
+
+* $\bar{X}$, $\bar{Y}, \bar{Z}$ - sample mean estimators for X, Y, Z
+
+* $\bar{x}$, $\bar{y}, \bar{z}$ - sample mean estimates of X, Y, Z
+
+* $\hat{T}$, $\hat{t}$ - given a statistic T, estimator and estimate of T
+
+* $P(A)$ - probability of an event A occuring
+
+* $f_X(.)$, $f_Y(.), f_Z(.)$ - probability mass / density functions of X, Y, Z; sometimes $p_X(.)$ etc. rather than $f_X(.)$
+
+* p(.) - used as a shorthand notation for pmfs / pdfs if the use of this is unambiguous (i.e. it is clear which is the random variable) 
+
+* $X\sim F$ - X distributed according to distribution function F
+
+* $E[X]$, $E[Y]$, $E[Z]$, $E[T]$ - the expectation of X, Y, Z, T respectively
+
+
+#
+
+$$\,$$
+$$\,$$
+
+**BAYESIAN ESTIMATION**
+
+
+# Bayesian estimation
+
+The main focus of inference in Bayesian statistics are
+
+$$\,$$
+
+* the posterior distribution of the parameter $\theta$ given the data $y$: $p(\theta|y)$
+
+* the posterior predictive distribution of new data $\tilde{y}$ given observed data $y$: $p(\tilde{y}|y)$
+
+$$\,$$
+
+Often we will look at the distributions of functions of $\theta$, $\tilde{y}$.
+
+
+# Bayesian estimation
+
+Posterior distributions are distribution mass or density functions and therefore allow us to make direct statements about the probability for $\theta$, resp. $\tilde{y}$, or a function of these, to take particular values or lie in certain regions.
+
+Frequentist statistics by contrast yields *point estimates* $\hat{\theta}$ and $\hat{y}$. Together with point estimates for the uncertainty asscoaited with these estimates (usually under the form of standard errors), these allow inference in their own right.
+
+While the Bayesian posterior distributions have many advantages over point estimates, it is sometimes useful to have summarise the posterior distributions by point estimates. We had already in Session 2 briefly touched upon these.
+
+
+# Bayesian estimation: Bayes estimator
+
+A **Bayes estimator** $\hat{\theta}_B$ is an estimator that minimses the posterior expected value of a loss function (i.e. the *posterior expected loss*).
+
+Mathematically:
+
+$$\,$$
+
+$$\hat{\theta}_B=\arg\min_{\hat{\theta}} \int_\mathcal{Y}\int_\mathcal{\Theta}\mathcal{C}(\theta-\hat{\theta})p(\theta,y)d\theta dy$$
+where $\mathcal{C}(.)$ is a cost function.
+
+Note that the integration is over both $\theta$ and $y$.
+
+
+# Bayesian estimation: Bayes estimator
+
+We can use any cost function, but the most commonly used ones include:
+
+$$\,$$
+
+* quadratic loss: $\mathcal{C}(x)=x^2$
+
+* absolute loss: $\mathcal{C}(x)=|x|$
+
+* 0-1 loss: $\mathcal{C}(x)=\begin{cases}0\qquad\mbox{if }|x|<\epsilon \\ 1\qquad\mbox{if }|x|\geq\epsilon\end{cases}$
+
+
+# Bayesian estimation: Bayes estimator
+
+```{r, echo=F}
+xx<-seq(-1,1,length=1000)
+epsilon<-0.1
+yy1<-xx^2
+yy2<-abs(xx)
+yy3<-ifelse(abs(xx)<epsilon,0,1)
+
+par(mar=c(7,7,1,1))
+plot(type="n",c((-1),1),0:1,xlab="error",ylab="cost",cex.lab=2.25,cex.axis=2.25)
+lines(xx,yy1,col="steelblue",lwd=3)
+lines(xx,yy2,col="greenyellow",lwd=3)
+#lines(xx,yy3,col="salmon",lwd=3)
+segments(x0=-1,y0=1,x1=-0.1,y1=1,lwd=3,col="salmon")
+segments(x0=-0.1,y0=0,x1=0.1,y1=0,lwd=3,col="salmon")
+segments(x0=0.1,y0=1,x1=1,y1=1,lwd=3,col="salmon")
+segments(x0=-0.1,y0=0,x1=-0.1,y1=1,lwd=3,col="salmon",lty=2)
+segments(x0=0.1,y0=0,x1=0.1,y1=1,lwd=3,col="salmon",lty=2)
+legend(x="bottomright",lwd=3,col=c("steelblue","greenyellow","salmon"),legend=c("quadratic","absolute","0-1"),bty="n",cex=2.25)
+```
+
+
+# Bayesian estimation: Bayes estimator
+
+We will see that:
+
+$$\,$$
+
+* quadratic loss $\Rightarrow$ posterior mean
+
+* absolute loss $\Rightarrow$ posterior median
+
+* 0-1 loss $\Rightarrow$ posterior mode
+
+
+# Bayesian estimation: Bayes estimator
+
+Whatever cost function is used, the joint density (resp. mass) function $p(\theta,y)$ is usually rewritten using the multiplication rule: $p(\theta,y)=p(\theta|y)p(y)$.
+
+The optimisation problem then becomes
+
+$$\hat{\theta}_B=\arg\min_{\hat{\theta}}\int\int \mathcal{C}(\theta-\hat{\theta})p(\theta|y)d\theta \, p(y)dy$$
+Since the probability axioms guarantee that $p(y)\geq0$, it is enough to find the estimator that minimises the inner integral:
+
+$$\hat{\theta}_B=\arg\min_{\hat{\theta}}\int \mathcal{C}(\theta-\hat{\theta})p(\theta|y)d\theta$$
+Note that there is a slight change in optimisation here: we find the optimum now for one realisation of $y$, not across all realisations.
+
+
+# Bayesian estimation: Bayes estimator
+
+**Quadratic loss function**
+
+$$\,$$
+
+See Practical 3 for the derivation of this estimator:
+
+$$\,$$
+
+$$\hat{\theta}_B=\int \theta p(\theta|y)d\theta=E[\theta|y]$$
+
+$$\,$$
+
+This particular estimator is also called the **minimum mean squared error estimator (MMSE)** and is the most widely used point estimate for posterior distributions.
+
+
+# Bayesian estimation: Bayes estimator
+
+**Absolute loss function**
+
+It can be shown that solving
+
+$$\,$$
+
+$$\hat{\theta_b}=\arg\min_{\hat{\theta}}\int|\theta-\hat{\theta}|p(\theta|y)dy$$
+$$\,$$
+
+is equivalent to finding $\hat{\theta}$ such that
+
+$$\,$$
+
+$$\int_{-\infty}^{\hat{\theta}_B}p(\theta|y)d\theta = \int_{\hat{\theta}_B}^\infty p(\theta|y)d\theta$$
+
+# Bayesian estimation: Bayes estimator
+
+**Absolute loss function**
+
+In other words, we need to find $\hat{\theta}_B$ that divides the posterior probability density into 2 regions with equal probability mass:
+
+$$\,$$
+
+$$\int_{-\infty}^{\hat{\theta}_B}p(\theta|y)d\theta = \int_{\hat{\theta}_B}^\infty p(\theta|y)d\theta=\frac{1}{2}$$
+
+$$\,$$
+
+This is the definition of the posterior median.
+
+
+# Bayesian estimation: Bayes estimator
+
+**0-1 loss function** (sometimes called hit-or-miss loss function)
+
+We need to find $\hat{\theta}_B$ such that
+
+$$\hat{\theta}_B=\arg\min_{\hat{\theta}}\int \mathcal{C}(\theta-\hat{\theta})p(\theta|y)d\theta$$
+where
+
+$$
+\mathcal{C}(x)=\begin{cases}
+1\qquad\mbox{if }|x|<\epsilon\\
+0\qquad\mbox{if }|x|\geq\epsilon
+\end{cases}
+$$
+for some $\epsilon>0$.
+
+
+# Bayesian estimation: Bayes estimator
+
+**0-1 loss function**
+
+The integral becomes
+
+$$
+\begin{align}
+\int \mathcal{C}(\theta-\hat{\theta})p(\theta|y)d\theta &=& \int_{-\infty}^{\hat{\theta}-\epsilon}1\cdot p(\theta|y)d\theta + \int_{\hat{\theta}+\epsilon}^\infty 1\cdot p(\theta|y)d\theta \\
+                                                        &=& 1-\int_{\hat{\theta}-\epsilon}^{\hat{\theta}+\epsilon}p(\theta|y)d\theta
+\end{align}
+$$
+
+This is minimised by maximising $\int_{\hat{\theta}-\epsilon}^{\hat{\theta}+\epsilon}p(\theta|y)d\theta$
+
+$$\,$$
+
+For small $\epsilon$ and smooth $p(\theta|y)$ this is maximised at the maximum, i.e. the mode, of the posterior distribution.
+
+
+# Bayesian estimation: Bayes estimator
+
+Note that the last of these estimator is usally not considered to be Bayes estimator since it requires (fairly mild) conditions to exist ($p(\theta|y)$ smooth and existence of a single mode) and is a limiting case ($\epsilon\rightarrow0$).
+
+$$\,$$
+
+For this reason, maximum a posterior density estimation is often considered an alternative to Bayes estimation.
+
+
+# Bayesian estimation: Credible intervals
+
+$$\,$$
+
+It is often desirable to identify regions of the parameter space that have a high probability of containing the parameter. To do this we can construct, after observing some data $y$, an interval (say) $[l(y),u(y)]$ such that the probability that $\theta\in[l(y),u(y)]$ is high.
+
+
+# Bayesian estimation: Credible intervals
+
+**Bayesian coverage**
+
+An interval based on observed data $Y=y$ has $100\times (1-\alpha)\%$ Bayesian coverage for $\theta$ if
+
+$$P(l(y)<\theta<u(y)\,|\,Y=y)=1-\alpha$$
+
+Note that here $\theta$ is random, the interval is fixed.
+
+
+# Bayesian estimation: Credible intervals
+
+**Frequentist coverage**
+
+An *random* interval $[l(Y),u(Y)$ has $100\times (1-\alpha)\%$  frequentist coverage for $\theta$ if, before the data are collected,
+
+$$P(l(Y)<\theta<u(Y)\,|\theta)=1-\alpha$$
+
+Note that here $\theta$ is fixed, the interval is random.
+
+
+# Bayesian estimation: Credible intervals
+
+$$\,$$
+
+Bayesian intervals are usually called **credible intervals** and frequentist intevals are called **confidence intervals**.
+
+$$\,$$
+However, **Bayesian confidence interval** and **frequentist confidence interval** are also in use.
+
+$$\,$$
+
+Bayesian confidence intervals also have frequentist coverage -- see Hoff P. D. (2009), Sections 3.1.2 and 3.4 for a comment on this.
+
+
+# Bayesian estimation: Credible intervals
+
+$$\,$$
+
+Frequentist confidence intervals are often centered on the point estimate. If not centered on the point estimate, they at the very least contain it and so *anchor* the interval.
+
+In a Bayesian setting this is a bit less straightforward: we could pick any interval along the support to get an interval with the desired coverage.
+
+We could simply center the interval on a chosen posterior point estimate such as the posterior mean. There are other ways to construct such intervals though.
+
+
+# Bayesian estimation: Credible intervals
+
+**Quantile-based intervals** (aka central posterior / equi-tailed intervals)
+
+One simple recipe for constructing a $100\times(1-\alpha)\%$ credible interval is by using posterior quantiles. We need to find $\theta_{\alpha/2}$ and $\theta_{1-\alpha/2}$ such that
+
+* $P(\theta<\theta_{\alpha/2}|Y=y)=\alpha/2$
+
+* $P(\theta>\theta_{1-\alpha/2}|Y=y)=\alpha/2$
+
+$\theta_{\alpha/2},\theta_{1-\alpha/2}$ are the quantile of the posterior distribution $p(\theta|y)$.
+
+$$\,$$
+
+It is easy to see that
+$$
+\begin{align}
+P(\theta\in[\theta_{\alpha/2},\theta_{1-\alpha/2}]|y) &=& 1-(P(\theta<\theta_{\alpha/2}|y)+P(\theta>\theta_{1-\alpha/2}|y)) \\
+                                                        &=& 1-\alpha
+\end{align}
+$$
+
+
+# Bayesian estimation: Credible intervals
+
+**Highest posterior density (HPD) regions**
+
+A $100\times(1-\alpha)\%$ HPD region consists of a subset of the parameter space, $s(y)\subset\Omega$ such that
+
+* $P(\theta\in s(y)|Y=y)=1-\alpha$;
+
+* If $\theta_a\in s(y)$, $\theta_b\notin s(y)$, then $p(\theta_a|y)\geq p(\theta_b|y)$.
+
+$$\,$$
+A HPD region is not necessarily an interval (e.g. for multi-modal distributions, the HPD region can consist of a union of distinct intervals).
+
+If the HPD region is an interval, it is the *narrowest* interval with $100\times(1-\alpha)\%$ coverage.
+
+
+# Bayesian estimation: Credible intervals - example
+
+Suppose the posterior distribution $p(\theta|y)$ is Beta$(5,2)$.
+
+$$\,$$
+
+95% quantile-based interval:
+
+$q_{0.025;\beta(5,2)}=0.3588$ and $q_{0.975;\beta(5,2)}=0.9567$
+
+$$\,$$
+
+$$\Rightarrow\mbox{ 95% quantile-based interval }= [0.3588,0.9567]$$
+
+The width of this interval is $q_{0.975;\beta(5,2)}-q_{0.025;\beta(5,2)} = 0.5980$
+
+
+# Bayesian estimation: Credible intervals - example
+
+Suppose the posterior distribution $p(\theta|y)$ is Beta$(5,2)$.
+
+$$\,$$
+
+95% HPD interval:
+
+There's no formula to find this; has to be found empirically by sliding a line down the y-axis on a graph of the density. In `R`, you can use the function `hdi()` from the `HDInterval` package (for example).
+
+$$\,$$
+
+$$\Rightarrow\mbox{ 95% HPD interval }= [0.4094,0.9822]$$
+The width of this interval is $0.9822-0.4094 = 0.5728$.
+
+Note that this is (slightly) narrower than the quantile-based interval.
+
+
+# Bayesian estimation: Credible intervals - example
+
+```{r, echo=F}
+plotInterval<-function(fun,valLow,valHigh,col="steelblue",lwd=2,lty=1,...){
+  funValLow<-fun(valLow,...)
+  funValHigh<-fun(valHigh,...)
+  segments(x0=valLow,y0=0,x1=valLow,y1=funValLow,col=col,lwd=lwd,lty=lty)
+  segments(x0=valHigh,y0=0,x1=valHigh,y1=funValHigh,col=col,lwd=lwd,lty=lty)
+  segments(x0=valLow,y0=funValLow,x1=valHigh,y1=funValHigh,col=col,lwd=lwd,lty=lty)
+}
+
+xx<-seq(0,1,length=1000)
+yy<-dbeta(xx,shape1=5,shape2=2)
+
+par(mar=c(7,7,1,1))
+plot(type="l",xx,yy,lwd=3,col="black",xlab=expression(theta),ylab=expression(paste(sep="","p(",theta,"|y)")),cex.lab=2,cex.axis=2)
+plotInterval(fun=dbeta,shape1=5,shape2=2,valLow=hdi(qbeta,0.5,shape1=5,shape2=2)[1],valHigh=hdi(qbeta,0.5,shape1=5,shape2=2)[2],col="steelblue",lwd=2.25)
+plotInterval(fun=dbeta,shape1=5,shape2=2,valLow=hdi(qbeta,0.8,shape1=5,shape2=2)[1],valHigh=hdi(qbeta,0.8,shape1=5,shape2=2)[2],col="greenyellow",lwd=2.25)
+plotInterval(fun=dbeta,shape1=5,shape2=2,valLow=hdi(qbeta,0.95,shape1=5,shape2=2)[1],valHigh=hdi(qbeta,0.95,shape1=5,shape2=2)[2],col="mediumorchid",lwd=2.25)
+plotInterval(fun=dbeta,shape1=5,shape2=2,valLow=qbeta(0.025,shape1=5,shape2=2),valHigh=qbeta(0.975,shape1=5,shape2=2),col="orange",lwd=2.25,lty=2)
+legend(x="topleft",lty=c(rep(1,1),2),col=c("black","steelblue","greenyellow","mediumorchid","orange"),legend=c("Beta(5,2) posterior","50% HPD","80% HPD","95% HPD","95% quantile"),bty="n",lwd=c(3,rep(2.25,4)),cex=2)
+```
+
+
+# Bayesian estimation: Bayes factor
+
+To compare 2 hypotheses, or 2 models, or 2 parameter values, we can compute the prior odds and compare these to the posterior odds:
+
+$$\,$$
+
+$$
+\frac{p(\theta_1|y)}{p(\theta_2|y)}=\frac{p(y|\theta_1)p(\theta_1)/p(y)}{p(y|\theta_2)p(\theta_2)/p(y)}=\frac{p(y|\theta_1)}{p(y|\theta_2)}\cdot\frac{p(\theta_1)}{p(\theta_2)}
+$$
+
+where
+
+* $\frac{p(\theta_1)}{p(\theta_2)}$ are the prior odds
+
+* $\frac{p(\theta_1|y)}{p(\theta_2|y)}$ are the posterior odds
+
+* $\frac{p(y|\theta_1)}{p(y|\theta_2)}$ is called the **Bayes factor**
+
+Bayes factor = how to update our beliefs having observed data.
+
+$$\,$$
+
+There is a relationship between Bayes factors and frequentist p-values.
+
+
+
+#
+
+[end of STA6206 Bayesian Data analysis Session 3]
