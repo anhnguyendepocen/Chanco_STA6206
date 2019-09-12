@@ -1,0 +1,391 @@
+---
+title: "STA6206 - Bayesian Data Analysis - Practical 3 (Solutions)"
+author: "Marc Henrion"
+date: "11 September 2019"
+header-includes:
+   - \usepackage{amsmath}
+output:
+  powerpoint_presentation:
+    reference_doc: MlwChanco_Template.pptx
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = TRUE, fig.width=16, fig.height=9, dpi=150, highlight=T)
+
+require(tidyverse)
+require(knitr)
+require(gridExtra)
+```
+
+
+#
+
+## Practical 3
+
+# Notation
+
+* $X, Y, Z$ - random variables
+
+* $x, y, z$ - measured / observed values
+
+* $\bar{X}$, $\bar{Y}, \bar{Z}$ - sample mean estimators for X, Y, Z
+
+* $\bar{x}$, $\bar{y}, \bar{z}$ - sample mean estimates of X, Y, Z
+
+* $\hat{T}$, $\hat{t}$ - given a statistic T, estimator and estimate of T
+
+* $P(A)$ - probability of an event A occuring
+
+* $f_X(.)$, $f_Y(.), f_Z(.)$ - probability mass / density functions of X, Y, Z; sometimes $p_X(.)$ etc. rather than $f_X(.)$
+
+* p(.) - used as a shorthand notation for pmfs / pdfs if the use of this is unambiguous (i.e. it is clear which is the random variable) 
+
+* $X\sim F$ - X distributed according to distribution function F
+
+* $E[X]$, $E[Y]$, $E[Z]$, $E[T]$ - the expectation of X, Y, Z, T respectively
+
+
+
+# Exercise 1
+
+Show that the Bayes estimator $\hat{\theta}_B$ for the quadratic loss function $\mathcal{C}(\theta-\hat{\theta})=(\theta-\hat{\theta})^2$ is given by the posterior mean. In other words, show that:
+
+$$\,$$
+
+$$E[\theta|y]=\arg\min_{\hat{\theta}}\int_\mathcal{Y}\int_\Theta\mathcal{C}(\theta-\hat{\theta})p(\theta,y)d\theta dy$$
+
+
+# Exercise 1 (Solution)
+
+We saw in lectures that we can use the multiplication rule and then optimise the inner integral only:
+
+$$
+\begin{align}
+\hat{\theta}_B &=& \arg\min_{\hat{\theta}}\int \mathcal{C}(\theta-\hat{\theta})p(\theta|y)d\theta \\
+               &=& \arg\min_{\hat{\theta}}\int (\theta-\hat{\theta})^2p(\theta|y)d\theta
+\end{align}
+$$
+
+To find the minimum, we solve
+
+$$
+\begin{align}
+     & \frac{d}{d\hat{\theta}}\int (\theta-\hat{\theta})^2p(\theta|y)d\theta = 0 \\
+\iff & \int2(\theta-\hat{\theta})(-1)p(\theta|y)d\theta=0 \\
+\iff & \int(\theta-\hat{\theta})p(\theta|y)d\theta=0 \\
+\iff &\int\theta p(\theta|y)d\theta=\int\hat{\theta} p(\theta|y)d\theta
+\end{align}
+$$
+
+# Exercise 1 (Solution)
+
+Note that $\int\hat{\theta} p(\theta|y)d\theta = \hat{\theta} \int p(\theta|y)d\theta=\hat{\theta}$ since the posterior distribution for $\theta$ is a probability distribution and needs to integrate to 1.
+
+$$\,$$
+
+Therefore we see that
+
+$$\,$$
+
+$$
+\hat{\theta}_B=\int\theta p(\theta|y) d\theta
+$$
+
+$$\,$$
+
+This is the posterior mean $E[\theta|y]=\int\theta p(\theta|y) d\theta$.
+
+
+# Exercise 2
+
+Suppose $\pi\sim\mbox{Beta}(2,3)$ and $Y_1,\ldots,Y_n\sim_{\mbox{iid}}Bernoulli(\pi)$. Further suppose we observe data $y_1,\ldots,y_n$ with $n=25, k=\sum_i y_i= 16$.
+
+Find the following:
+
+* posterior distribution $p(\pi|k)$ and plot it, comparing it to the prior distribution
+
+* posterior predictive distribution $p(\tilde{y}|y_1,\ldots,y_n)$
+
+* the 95% quantile-based Bayesian confidence interval for $\pi$
+
+* the 95% HPD interval
+
+Further, compute:
+
+* $P(\pi>0.5|k)$
+
+* For the following 2 hypotheses: $H_1:\pi\in[0.3,0.5], H_2:\pi\in[0.5,0.7]$, compute the prior and posterior odds and calculate the Bayes factor.
+
+
+# Exercise 2 (Solution)
+
+Posterior distribution
+
+$$p(\pi|k=16)\propto\pi^{2-1}(1-\pi)^{3-1}\pi^{16}(1-\pi)^{25-16}=\pi^{17}(1-\pi)^{11}$$
+$$\Rightarrow \Pi|k\sim\mbox{Beta}(18,12)$$
+
+```{r}
+xx<-seq(0,1,length=100)
+yyPr<-dbeta(xx,2,3)
+yyPo<-dbeta(xx,18,12)
+
+plot(type="l",xx,yyPo,lwd=3,col="mediumorchid",xlab=expression(pi),ylab="density",cex.lab=2,cex.axis=2)
+lines(xx,yyPr,lwd=3,lty=2,col="steelblue")
+
+legend(x="topleft",bty="n",lwd=2,col=c("steelblue","mediumorchid"),lty=c(2,1),legend=c("prior","posterior"),cex=2)
+```
+
+
+# Exercise 2 (Solution)
+
+Posterior predictive distribution
+
+$$\,$$
+
+$$
+\begin{align}
+p(\tilde{Y}=1|y_1,\ldots,y_n) &=& \int p(\tilde{y},\pi|y_1,\ldots,y_n)d\pi\\
+                              &=& \int p(\tilde{y}|pi,y_1,\ldots,y_n)p(\pi|y_1,\ldots,y_n)d\pi \\
+                              &=& \int \pi \frac{\Gamma(30)}{\Gamma(18)\Gamma(12)}\pi^{17}(1-\pi)^{11} d\pi \\
+                              &=& \frac{\Gamma(30)\Gamma(19)}{\Gamma(18)\Gamma(31)}\int \frac{\Gamma(31)}{\Gamma(19)\Gamma(12)} \pi^{18}(1-\pi)^{11}d\pi \\
+                              &=& \frac{\Gamma(30)\Gamma(19)}{\Gamma(18)\Gamma(31)} = \frac{18}{30} = 3/5 = 0.6
+\end{align}
+$$
+
+From this it follows that $p(\tilde{Y}=0|y_1,\ldots,y_n)=1-\frac{3}{5}=\frac{2}{5}=0.4$.
+
+
+# Exercise 2 (Solution)
+
+We have:
+
+* $q_{0.025;\mbox{Beta}(18,12)}=$ `r round(digits=4,qbeta(0.025,18,12))`
+
+* $q_{0.975;\mbox{Beta}(18,12)}=$ `r round(digits=4,qbeta(0.975,18,12))`
+
+$$\,$$
+
+Therefore the 95% quantile based Bayesian confidence interval for $\pi$ is given by $[$```r round(digits=2,qbeta(0.025,18,12))```,```r round(digits=2,qbeta(0.975,18,12))```$]$
+
+
+```{r}
+qbeta(c(0.025,0.975),18,12)
+```
+
+# Exercise 2 (Solution)
+
+For the HPD we are going to use the function `hdi()` from the R package `HDInterval`:
+
+```{r}
+library(HDInterval)
+hdp<-hdi(qbeta,0.95,shape1=18,shape2=12)
+print(hdp)
+```
+
+From this we find that the 95% HDP interval for $\pi$ is given by $[$```r round(digits=2,hdp[1])```,```r round(digits=2,hdp[2])```$]$
+
+
+# Exercise 2 (Solution)
+
+We have
+
+$$
+\begin{align}
+P(\pi>0.5|Y=k) &=& \int_{0.5}^1p(\pi|k)d\pi \\
+               &=& \int_{0.5}^1\frac{\Gamma(30)}{\Gamma(18)\Gamma(12)}\pi^{17}(1-\pi)^{11}d\pi \\
+               &=& \approx0.87
+\end{align}
+$$
+
+```{r}
+integrate(dbeta,lower=0.5,upper=1,shape1=18,shape2=12)
+```
+
+Alternatively we could have worked with the posterior cdf:
+
+```{r}
+1-pbeta(0.5,18,12)
+```
+
+# Exercise 2 (Solution)
+
+Prior odds
+
+$$\frac{P(H_1)}{P(H_2)}=\frac{\int_{0.3}^{0.5}p_{\beta(3,2)}(\pi)d\pi}{\int_{0.5}^{0.7}p_{\beta(3,2)}(\pi)d\pi}=1.48$$
+
+$$\,$$
+
+Prosterior odds
+
+$$\frac{P(H_1|k)}{P(H_2|k)}=\frac{\int_{0.3}^{0.5}p_{\beta(18,12)}(\pi)d\pi}{\int_{0.5}^{0.7}p_{\beta(18,12)}(\pi)d\pi}=0.18$$
+
+# Exercise 2 (Solution)
+
+```{r}
+priorOdds<-integrate(dbeta,0.3,0.5,shape1=2,shape2=3)$value/integrate(dbeta,0.5,0.7,shape1=2,shape2=3)$value
+#priorOdds<-(pbeta(0.5,2,3)-pbeta(0.3,2,3))/(pbeta(0.7,2,3)-pbeta(0.5,2,3)) # alternative way of doing this
+priorOdds
+posteriorOdds<-integrate(dbeta,0.3,0.5,shape1=18,shape2=12)$value/integrate(dbeta,0.5,0.7,shape1=18,shape2=12)$value
+posteriorOdds
+```
+
+
+# Exercise 2 (Solution)
+
+Bayes Factor
+
+$\mbox{BF} = \frac{\mbox{posterior odds}}{\mbox{prior odds}}=0.18/1.48 = 0.12$
+
+$$\,$$
+
+```{r}
+bayesFactor<-posteriorOdds/priorOdds
+bayesFactor
+```
+
+
+# Exercise 3
+
+Suppose $\pi\sim\mbox{Gamma}(5,2)$ and $Y_1,\ldots,Y_n\sim_{\mbox{iid}}Poisson(\lambda)$. Further suppose we observe data $y_1,\ldots,y_n$ with $n=18, k=\sum_i y_i= 40$.
+
+Find the following:
+
+* posterior distribution $p(\lambda|y_1,\ldots,y_n$ and plot it, comparing it to the prior distribution
+
+* posterior predictive distribution $p(\tilde{y}|y_1,\ldots,y_n)$
+
+* the 95% quantile-based Bayesian confidence interval for $\lambda$
+
+* the 95% HPD interval
+
+Further, compute:
+
+* $P(\lambda\leq1|y_1,\ldots,n)$
+
+* For the following 2 hypotheses: $H_1:\lambda\in[0.75,1.25], H_2:\lambda\in[1.75,2.25]$, compute the prior and posterior odds and calculate the Bayes factor.
+
+
+# Exercise 3 (Solution)
+
+Posterior distribution
+
+$$
+\begin{align}
+p(\lambda|y_1,\ldots,y_n) &\propto& \lambda^{5-1}e^{-2\lambda}\lambda^{\sum_i y_i} e^{-n\lambda} \\
+                          &\propto& \lambda^{5+40-1}e^{-(2+18)\lambda} \\
+\Rightarrow \Lambda|y_1,\ldots,y_n &\sim& \Gamma(45,20)
+\end{align}
+$$
+
+```{r}
+xx<-seq(0,8,length=100)
+yyPr<-dgamma(xx,shape=5,rate=2)
+yyPo<-dgamma(xx,shape=45,rate=20)
+
+plot(type="l",xx,yyPo,lwd=3,col="mediumorchid",xlab=expression(pi),ylab="density",cex.lab=2,cex.axis=2)
+lines(xx,yyPr,lwd=3,lty=2,col="steelblue")
+
+legend(x="topleft",bty="n",lwd=2,col=c("steelblue","mediumorchid"),lty=c(2,1),legend=c("prior","posterior"),cex=2)
+```
+
+
+# Exercise 3 (Solution)
+
+Posterior predictive distribution
+
+$$\,$$
+
+From Practical 1&2, Exercise 4, we know:
+
+$$\,$$
+
+$$\tilde{Y}|y_1,\ldots,y_n\sim\mbox{NegBin}(45,20/21)$$
+
+
+# Exercise 3 (Solution)
+
+We have:
+
+* $q_{0.025;\Gamma(45,20)}=$ `r round(digits=4,qgamma(0.025,shape=45,rate=20))`
+
+* $q_{0.975;\Gamma(45,20)}=$ `r round(digits=4,qgamma(0.975,shape=45,rate=20))`
+
+$$\,$$
+
+Therefore the 95% quantile based Bayesian confidence interval for $\pi$ is given by $[$```r round(digits=2,qgamma(0.025,shape=45,rate=20))```,```r round(digits=2,qgamma(0.975,shape=45,rate=20))```$]$
+
+```{r}
+qgamma(c(0.025,0.975),shape=45,rate=20)
+```
+
+# Exercise 3 (Solution)
+
+For the HPD we are going to use the function `hdi()` from the R package `HDInterval`:
+
+```{r}
+library(HDInterval)
+hdp<-hdi(qgamma,0.95,shape=45,rate=20)
+print(hdp)
+```
+
+From this we find that the 95% HDP interval for $\lambda$ is given by $[$```r round(digits=2,hdp[1])```,```r round(digits=2,hdp[2])```$]$
+
+
+# Exercise 3 (Solution)
+
+We have
+
+$$
+\begin{align}
+P(\lambda\leq1|y_1,\ldots,y_n) &=& \int_{0}^1p(\lambda|y_1,\ldots,y_n)d\lambda \\
+               &=& \int_0^1 \frac{20^{45}}{\Gamma(45)}\lambda^{44}e^{-20\lambda}d\lambda \\
+               &=& 1.06\cdot10^{-6}
+\end{align}
+$$
+
+```{r}
+integrate(dgamma,lower=0,upper=1,shape=45,rate=20)
+```
+
+
+# Exercise 3 (Solution)
+
+
+Prior odds
+
+$$\frac{P(H_1)}{P(H_2)}=\frac{\int_{0.75}^{1.25}p_{\gamma(5,2)}(\lambda)d\lambda}{\int_{1.75}^{2.25}p_{\Gamma(5,2)}(\lambda)d\lambda}=0.2513$$
+
+$$\,$$
+
+Prosterior odds
+
+$$\frac{P(H_1|y_1,\ldots,y_n)}{P(H_2|y_1,\ldots,y_n)}=\frac{\int_{0.75}^{1.25}p_{\gamma(45,20)}(\lambda)d\lambda}{\int_{1.75}^{2.25}p_{\Gamma(45,20)}(\lambda)d\lambda}=0.0004$$
+
+# Exercise 3 (Solution)
+
+```{r}
+priorOdds<-integrate(dgamma,0.75,1.25,shape=5,rate=2)$value/integrate(dgamma,1.25,2.25,shape=5,rate=2)$value
+priorOdds
+posteriorOdds<-integrate(dgamma,0.75,1.25,shape=45,rate=20)$value/integrate(dgamma,1.25,2.25,shape=45,rate=20)$value
+posteriorOdds
+```
+
+
+# Exercise 3 (Solution)
+
+Bayes Factor
+
+$\mbox{BF} = \frac{\mbox{posterior odds}}{\mbox{prior odds}}=0.004/0.2513 = 0.0015$
+
+$$\,$$
+
+```{r}
+bayesFactor<-posteriorOdds/priorOdds
+bayesFactor
+```
+
+
+
+#
+
+[end of STA6206 BDA Practical 3]
