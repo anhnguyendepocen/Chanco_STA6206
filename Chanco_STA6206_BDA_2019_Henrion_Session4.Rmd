@@ -1,0 +1,556 @@
+---
+title: "STA6206 - Bayesian Data Analysis - Session 4"
+author: "Marc Henrion"
+date: "12 September 2019"
+header-includes:
+   - \usepackage{amsmath}
+output:
+  powerpoint_presentation:
+    reference_doc: MlwChanco_Template.pptx
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = TRUE, fig.width=16, fig.height=9, dpi=300, highlight=T)
+
+require(tidyverse)
+require(knitr)
+require(gridExtra)
+require(kableExtra)
+
+require(HDInterval)
+```
+
+
+# Preliminaries
+
+* These notes were written in `R markdown`.
+
+* All examples / code in these notes is `R` and a combination of STAN / JAGS / BUGS for Bayesian model specification.
+
+* GitHub repository - will contain all course materials by the end of the week:
+
+  <https://github.com/gitMarcH/Chanco_STA6206>
+
+#
+
+## Session 4: Markov Chain Monte Carlo
+
+$$\,$$
+
+Some references for Bayesian statistics / data analysis are:
+
+1. Hoff, P.D. (2009). "*A First Course in Bayesian Statistical Methods*." Springer.
+
+2. Gelman, A., Carlin, J.B., Stern, H.S., Dunson, D.B., Vehtari, A., Rubin, D.B. (2014). "*Bayesian Data Analysis*". 3^rd^ ed. CRC Press.
+
+3. Ramoni, M., Sebastiani, P. (2007), 'Bayesian Methods', in Berthold, M., Hand, D.J. (eds.). "*Intelligent Data Analysis*", 2^nd^ ed., Springer, pp.131-168
+
+4. Stone, J.V. (2013). "*Bayes' Rule: A Tutorial Introduction to Bayesian Analysis*". Sebtel Press.
+
+
+# Notation
+
+* $X, Y, Z$ - random variables
+
+* $x, y, z$ - measured / observed values
+
+* $\bar{X}$, $\bar{Y}, \bar{Z}$ - sample mean estimators for X, Y, Z
+
+* $\bar{x}$, $\bar{y}, \bar{z}$ - sample mean estimates of X, Y, Z
+
+* $\hat{T}$, $\hat{t}$ - given a statistic T, estimator and estimate of T
+
+* $P(A)$ - probability of an event A occuring
+
+* $f_X(.)$, $f_Y(.), f_Z(.)$ - probability mass / density functions of X, Y, Z; sometimes $p_X(.)$ etc. rather than $f_X(.)$
+
+* p(.) - used as a shorthand notation for pmfs / pdfs if the use of this is unambiguous (i.e. it is clear which is the random variable) 
+
+* $X\sim F$ - X distributed according to distribution function F
+
+* $E[X]$, $E[Y]$, $E[Z]$, $E[T]$ - the expectation of X, Y, Z, T respectively
+
+
+#
+$$\,$$
+$$\,$$
+
+**MONTE CARLO APPROXIMATION**
+
+# Monte Carlo
+
+In the examples we have seen so far, particularly when we used conjugate priors, we ended up with a posterior distribution for an unknown parameter $\theta$ for which there existed simple formulae for posterior means and variances.
+
+Often however we are interested in other aspects of the posterior distribution, e.g.
+
+* $P(\theta\in A|y_1,\ldots,y_n)$ for arbitrary sets A.
+
+* posterior means and variances for functions of $\theta$
+
+* predictive distributions for missing or unobserved data
+
+* comparing two or more populations, so that we are interested in the posterior distribution for $|\theta_1-\theta_2|$, $\theta_1/\theta_2$ or $\max{\theta_1,\ldots,\theta_n}$
+
+
+# Monte Carlo
+
+Obtaining exact values for these quantities can be difficult or impossible.
+
+$$\,$$
+
+Trick:
+
+* Generate random samples for the parameters from their posterior distributions.
+
+* Use these samples to compute arbitrary quantities of interest to an arbitrary degree of precision.
+
+$$\,$$
+
+Generating random samples $\approx$ playing a game of chance. Since Monte Carlo is the most famous casino in the world, this approach was named the **Monte Carlo approximation**.
+
+
+# Monte Carlo
+
+Recall the integral from Exercise 5, Practical 1&2:
+
+$$\,$$
+
+$$
+\begin{align}
+P(\theta_1>\theta_2|...) &=& \int_0^\infty \gamma(\theta_2;68,45) \int_{\theta_2}^\infty\gamma(\theta_1;219,112)d\theta_1d\theta_2 \\
+ &=& \frac{112^{219}45^{68}}{\Gamma(219)\Gamma(68)}\int_0^\infty\int_0^{\theta_1}\theta_1^{218}\theta_2^{67}e^{-112\theta_1-45\theta_2}d\theta_2d \theta_1
+\end{align}
+$$
+
+This integral can be solved in several ways, but one way involves generating random samples from both gamma distributions and then approximating the integrals by summing over the random samples.
+
+
+# Monte Carlo
+
+Let $\theta$ be a parameter of interest and let $y_1,\ldots,y_n$ be a sample from the sampling model distribution $p(y_1,\ldots,y_n|\theta)$.
+
+Suppose we can sample a number $S$ of independent, random values for $\theta$ from the posterior distribution $p(\theta|y_1,\ldots,y_n)$:
+
+$$\theta^{(1)},\ldots,\theta^{(S)}\sim_{\mbox{iid}}p(\theta|y_1,\ldots,y_n)$$
+The the empirical distribution of the samples $\{\theta^{(1)},\ldots,\theta^{(S)}\}$ would approximate $p(\theta|y_1,\ldots,y_n)$ with the approximation improving as $S$ increases.
+
+The empirical distribution of $\{\theta^{(1)},\ldots,\theta^{(S)}\}$ is called the **Monte Carlo approximation** to $p(\theta|y_1,\ldots,y_n)$.
+
+Note: Monte Carlo works for any distribution, not just posteriors.
+
+
+# Monte Carlo
+
+The *Law of Large Numbers (LLN)* is why Monte Carlo works: by the LLN
+
+$$\,$$
+
+$$\frac{1}{S}\sum_s g\left(\theta^{(s)}\right)\rightarrow E[g(\theta)|y_1,\ldots,y_n]\mbox{ as }S\rightarrow \infty$$
+$$\,$$
+where $E[g(\theta)|y_1,\ldots,y_n] = \int g(\theta)p(\theta|y_1,\ldots,y_n)d\theta$.
+
+
+# Monte Carlo
+
+For example, this means that as $S\rightarrow\infty$:
+
+* $\bar{\theta}=\sum_s \theta^{(s)}/S\rightarrow E[\theta|y_1,\ldots,y_n]$
+
+* $\sum_s\left(\theta^{(s)}-\bar{\theta}\right)^2/(S-1)\rightarrow Var(\theta|y_1,\ldots,y_n)$
+
+* $\#\left(\theta^{(s)}\leq c\right)/S\rightarrow P(\theta\leq c|y_1,\ldots,y_n)$
+
+* the $\alpha^{th}$ percentile of $\{\theta^{(1)},\ldots,\theta^{(S)}\}\rightarrow\theta_\alpha$
+
+* $\ldots$
+
+We can approximate just about any aspect of the distribution $p(\theta|y_1,\ldots,y_n)$ in this way and with an arbitrary degree of precision given a large enough sample.
+
+
+# Monte Carlo - Example
+
+Recall for a $\Gamma(a,b)$ prior with a $Pois(\lambda)$ sampling model for some data $y_1,\ldots,y_n$, the posterior distribution is $\Gamma(a+\sum_i y_i,b+n)$.
+
+In Practical 3, Exercise 3, we had $a=5,b=2, n=18, \sum_i y_i = 40$, yielding a $\Gamma(45,20)$ posterior.
+
+
+# Monte Carlo - Example
+
+$$\,$$
+**Exercise:**
+$$\,$$
+
+Use Monte Carlo, with sizes $S=10, 100, 1000, 10000$ to approximate
+
+* the posterior mean $E[\lambda|y_1,\ldots,y_n]$
+
+* the posterior probability $P(\lambda<2.1|y_1,\ldots,y_n)$
+
+* the 95% quantile-based Bayesian confidence interval
+
+
+
+# Monte Carlo - Example
+
+The posterior mean is given by $\frac{a+\sum_i y_i}{b+n}=45/20=2.25$.
+
+Approximated by Monte Carlo:
+
+```{r, collapse=T}
+set.seed(1234)
+
+a<-5; b<-2
+sy<-40; n<-18
+
+s10<-rgamma(n=10,shape=a+sy,rate=b+n); print(mean(s10))
+s100<-rgamma(n=100,shape=a+sy,rate=b+n); print(mean(s100))
+s1000<-rgamma(n=1000,shape=a+sy,rate=b+n); print(mean(s1000))
+s10000<-rgamma(n=10000,shape=a+sy,rate=b+n); print(mean(s10000))
+```
+
+
+# Monte Carlo - Example
+
+The posterior probability $P(\lambda<2.1|y_1,\ldots,y_n)$ is given by
+
+```{r, collapse=T}
+pgamma(2.1,a+sy,b+n)
+```
+
+We can approximate this by Monte Carlo:
+
+```{r, collapse=T}
+sum(s10<2.1)/10
+sum(s100<2.1)/100
+sum(s1000<2.1)/1000
+sum(s10000<2.1)/10000
+```
+
+# Monte Carlo - Example
+
+The quantile based 95% Bayesian confidence interval is given by:
+
+```{r, collapse=T}
+qgamma(c(0.025,0.975),a+sy,b+n)
+```
+
+This too we can approximate using Monte Carlo, by taking empirical quantiles of the samples:
+
+```{r, collapse=T}
+quantile(s10,probs=c(0.025,0.975))
+quantile(s100,probs=c(0.025,0.975))
+quantile(s100,probs=c(0.025,0.975))
+quantile(s1000,probs=c(0.025,0.975))
+```
+
+
+# Monte Carlo - Example
+
+We can plot how these quantities converge as $S\rightarrow\infty$.
+
+```{r, echo=T, collapse=T}
+sVect<-1:1500
+df<-data.frame(S=sVect,postMean=NA,postCdf=NA,postQ975=NA)
+for(s in sVect){
+  samp<-rgamma(n=s,shape=a+sy,rate=b+n)
+  df$postMean[df$S==s]<-mean(samp)
+  df$postCdf[df$S==s]<-sum(samp<2.1)/s
+  df$postQ975[df$S==s]<-quantile(samp,probs=0.975)
+}
+```
+
+# Monte Carlo - Example
+
+```{r, echo=T, collapse=T}
+titles<-paste("posterior",c("mean","cdf at 2.1","97.5% quantile"))
+cols<-c("steelblue","greenyellow","salmon")
+hVect<-c((a+sy)/(b+n),pgamma(2.1,a+sy,b+n),qgamma(0.975,a+sy,b+n))
+
+par(mfrow=c(3,1),mar=c(5,7,2,1))
+for(i in 1:3){
+  plot(df$S,df[,1+i],type="l",xlab="number of Monte Carlo samples",ylab="Monte Carlo approx.",cex.lab=2.5,cex.axis=2.5,cex.main=2.5,lwd=3,col=cols[i],main=titles[i])
+  abline(lwd=3,lty=2,h=hVect[i],col="darkgrey")
+}
+```
+
+
+# Monte Carlo - posterior inference for arbitrary functions
+
+Often we are interested in the posterior distribution of some function $\gamma=g(\theta)$ of the parameter $\theta$. For examples, in the binomial model we often are interested in the logodds: $\gamma=log\frac{\theta}{1-\theta}$.
+
+Using Monte Carlo, we can approximate any aspect of the posterior distribution $p(g(\theta)|y_1,\ldots,y_n)$:
+
+$$\,$$
+
+$$
+\mbox{independently}
+\begin{cases}
+\mbox{sample }\theta^{(1)}\sim p(\theta|y_1,\ldots,y_n)\mbox{, compute }\gamma^{(1)}=g\left(\theta^{(1)}\right) \\
+\mbox{sample }\theta^{(2)}\sim p(\theta|y_1,\ldots,y_n)\mbox{, compute }\gamma^{(2)}=g\left(\theta^{(2)}\right) \\
+\ldots \\
+\mbox{sample }\theta^{(S)}\sim p(\theta|y_1,\ldots,y_n)\mbox{, compute }\gamma^{(S)}=g\left(\theta^{(S)}\right) \\
+\end{cases}
+$$
+
+
+# Monte Carlo - posterior inference for arbitrary functions
+
+
+Then as before, we can compute:
+
+$$\,$$
+
+* $\bar{\gamma}=\sum_s \gamma^{(s)}/S\rightarrow E[\gamma|y_1,\ldots,y_n]$
+
+* $\sum_s\left(\gamma^{(s)}-\bar{\gamma}\right)^2/(S-1)\rightarrow Var(\gamma|y_1,\ldots,y_n)$
+
+* $\ldots$
+
+
+# Monte Carlo - sampling from predictive distributions
+
+New data $\tilde{Y}$ is generated by the same sampling model as the observed data $y_1,\ldots,y_n$:
+$$\,$$
+
+$$\mbox{SAMPLING MODEL }\qquad\qquad\qquad\tilde{Y}\sim p(\tilde{y}|\theta)$$
+We cannot predict from this model however, as $\theta$ is unknown: we need to integrate it out:
+
+$$\,$$
+
+$$\mbox{PREDICTIVE MODEL }\quad p(\tilde{y})=\int p(\tilde{y}|\theta)p(\theta)d\theta$$
+The above is a *prior predictive distribution* as we have not conditioned on observed data $y_1,\ldots,y_n$.
+
+
+# Monte Carlo - sampling from predictive distributions
+
+After we have observed data, we obtain the *posterior predictive distribution*:
+
+$$\,$$
+
+$$
+\begin{align}
+p(\tilde{y}|y_1,\ldots,y_n) &=& \int p(\tilde{y}|\theta,y_1,\ldots,y_n)p(\theta|y_1,\ldots,y_n)d\theta \\
+                            &=& \int p(\tilde{y}|\theta)p(\theta|y_1,\ldots,y_n)d\theta
+\end{align}
+$$
+$$\,$$
+
+For a $\Gamma(a,b,)$ prior and a $\mbox{Pois}(\lambda)$ sampling model, we saw (Exercise 4, Practical 1&2) that the posterior predictive distribution was $\mbox{NegBin}(a+\sum_i y_i),(b+n)/(b+n+1))$.
+
+In many situations $p(\tilde{y}|y_1,\ldots,y_n)$ is too complicated to sample from directly. However we often are able to sample from $p(\theta|y_1,\ldots,y_n)$ and $p(y|\theta)$.
+
+
+# Monte Carlo - sampling from predictive distributions
+
+We can then obtain samples from the posterior predictive distribution as follows:
+
+$$
+\mbox{independently}
+\begin{cases}
+\mbox{sample }\theta^{(1)}\sim p(\theta|y_1,\ldots,y_n)\mbox{, sample }\tilde{y}^{(1)}\sim p\left(\tilde{y}|\theta^{(1)}\right) \\
+\mbox{sample }\theta^{(2)}\sim p(\theta|y_1,\ldots,y_n)\mbox{, sample }\tilde{y}^{(2)}\sim p\left(\tilde{y}|\theta^{(2)}\right) \\
+\ldots \\
+\mbox{sample }\theta^{(S)}\sim p(\theta|y_1,\ldots,y_n)\mbox{, sample }\tilde{y}^{(n)}\sim p\left(\tilde{y}|\theta^{(n)}\right)
+\end{cases}
+$$
+$$\,$$
+
+$\left\{\left(\theta^{(1)},\tilde{y}^{(1)}\right),\ldots,\left(\theta^{(S)},\tilde{y}^{(S)}\right)\right\}$ constitutes $S$ independent samples from the joint posterior distribution of $(\theta,\tilde{Y})$.
+
+$\left\{\tilde{y}^{(1)},\ldots,\tilde{y}^{(n)}\right\}$ constitutes $S$ independent samples from the *marginal* posterior distribution of $\tilde{Y}$, i.e. the posterior predictive distribution. 
+
+
+# Monte Carlo - sampling from predictive distributions
+
+An important use of sampling from the posterior predictive distribution is for assessing model fit:
+
+$$\,$$
+
+* Do samples from the posterior predictive distribution look like the actual observed data?
+
+* How likely are certain aspects of the observed data to be occurring under the posterior predictive distribution?
+
+
+#
+
+$$\,$$
+$$\,$$
+
+**BAYESIAN INFERENCE: multi-parameter models**
+
+# Bayesian inference: multi-parameter models
+
+Bayesian inference for two or more unknown parameters is not conceptually different from the one parameter case.
+
+$$\,$$
+
+E.g. for a normal sampling model with parameters $(\mu,\sigma^2)$ with joint prior distribution $p(\mu,\sigma^2)$, posterior inference proceeds using Bayes' rule:
+
+$$p(\mu,\sigma^2|y_1,\ldots,y_n)=\frac{p(y_1,\ldots,y_n|\mu,\sigma^2)p(\mu,\sigma^2)}{p(y_1,\ldots,y_n)}$$
+$$\,$$
+
+However, for many multiparameter models, the joint posterior distribution is non-standard and difficult to sample from directly.
+
+
+
+#
+
+$$\,$$
+$$\,$$
+
+**MARKOV CHAIN MONTE CARLO**
+
+# MCMC
+
+The distributions $p(\mu|\sigma^2,y_1,\ldots,y_n)$ and $p(\sigma^2|\mu,y_1,\ldots,y_n)$ are called the **full conditional distributions** of $\mu$ and $\sigma^2$ as they are conditional distributions for a single parameter given everything else.
+
+We have already seen (Exercise 8, Practical 1&2) that if
+
+$$\,$$
+
+$$
+\begin{cases}
+Y_1,\ldots,Y_n|\mu,\sigma^2\sim\mathcal{N}(\mu,\sigma^2) \\
+\mu\sim\mathcal{N}(\mu_0,\sigma_0^2)
+\end{cases}
+$$
+then 
+
+$$\mu|\sigma^2,y_1,\ldots,y_n\sim\mathcal{N}(\mu_n,\sigma_n^2)$$
+
+where $\mu_n=\frac{\mu_0/\sigma_0^2 + n\bar{y}/\sigma^2}{1/\sigma_0^2+n/\sigma^2}$ and $\sigma_n^2=(1/\sigma_0^2+n/\sigma^2)^{-1}$.
+
+
+# MCMC
+
+If we now assume that
+
+$$p(\mu,\sigma^2)=p(\mu)p(\sigma^2)$$
+
+and
+
+$$1/\sigma^2\sim\Gamma(\nu_0/2,\nu_0\tau_0^2/2)$$
+
+Then it can be shown that
+
+$$1/\sigma^2|\mu,y_1,\ldots,y_n\sim\Gamma(\nu_n/2,\nu_n\tau_n^2(\mu)/2)$$
+
+where 
+$$
+\begin{cases}
+\nu_n &=& \nu_0+n \\
+\tau_n^2(\mu) &=& [\nu_0\tau_0^2+ns_n^2(\mu)]/\nu_n \\
+s_n^2(\mu) &=& \sum_i(y_i-\mu)^2
+\end{cases}
+$$
+
+# MCMC
+
+So to summarise, for a $\mathcal{N}(\mu,\sigma^2)$ sampling model:
+
+* conditionally on $\sigma^2$, the normal distribution is a conjugate prior for $\mu$
+
+* conditionally on $\mu$, the inverse gamma distribution is a conjugate prior for $\sigma^2$
+
+This is called a **semi-conjugate** or **conditionally conjugate** prior for $(\mu,\sigma^2)$.
+
+Note this does not guarantee that the resulting joint distribution $p(\mu,\sigma^2)$ is conjugate for $(\mu,\sigma^2)$.
+
+
+# MCMC
+
+Note if we have
+
+$$\,$$
+$$1/X\sim\Gamma(a,b)$$
+$$\,$$
+
+Then X follows an *inverse Gamma* distribution:
+
+$$\,$$
+
+$$
+X\sim\mbox{inv-}\Gamma(a,b)
+$$
+
+# MCMC
+
+Under this semi-conjugate prior for $(\mu,\sigma^2)$, given a starting sample $\sigma^{2\,(1)}$, we can sample a value $\mu^{(1)}$ from $p(\mu|\sigma^{2(1)},y_1,\ldots,y_n)$.
+
+$(\mu^{(1)},\sigma^{2 (1)})$ will be a sample from $p(\mu,\sigma^2|y_1,\ldots,y_n)$.
+
+But now, $\mu^{(1)}$ can also be considered a sample from the marginal distribution $p(\mu|y_1,\ldots,y_n)$ and we can then use this to sample a value $\sigma^{2(2)}$ from $p(\sigma^2|\mu^{(1)},y_1,\ldots,y_n)$.
+
+Now $(\mu^{(1)},\sigma^{2(2)})$ can be considered a sample from $p(\mu,\sigma^2|y_1,\ldots,y_n)$ and so $\sigma^{2(2)}$ can be considered a sample from the marginal distribution $p(\sigma^2|y_1,\ldots,y_n)$ and this can be used to generate a new value $\sigma^{(2)}$ and so on.
+
+This is the principle of the *Gibbs sampler*.
+
+
+# MCMC: Gibbs sampler
+
+Suppose you have a vector of parameters $\mathbf{\phi}=(\phi_1,\ldots,\phi_p)$ and a joint distribution $p(\mathbf{\phi})$. Given a starting value $\mathbf{\phi}^{(0)}=(\phi_1^{(0)},\ldots,\phi_p^{(0)})$, the **Gibbs sampler** generates $\mathbf{\phi}^{(s)}$ from $\mathbf{\phi}^{(s-1)}$ as follows:
+
+$$\,$$
+
+$$\begin{cases}
+\mbox{sample }\quad \phi_1^{(s)}\sim p(\phi_1|\phi_2^{(s-1)},\phi_3^{(s-1)},\ldots,\phi_p^{(s-1)}) \\
+\mbox{sample }\quad \phi_2^{(s)}\sim p(\phi_2|\phi_1^{(s-1)},\phi_3^{(s-1)},\ldots,\phi_p^{(s-1)}) \\
+\ldots \\
+\mbox{sample }\quad \phi_p^{(s)}\sim p(\phi_p|\phi_1^{(s-1)},\phi_2^{(s-1)},\ldots,\phi_{p-1}^{(s-1)})
+\end{cases}$$
+
+
+# MCMC: Gibbs sampler
+
+This generates a *dependent* sequence of vectors
+
+$$\,$$
+
+$$
+\begin{align}
+\mathbf{\phi}^{(1)} &=& (\phi_1^{(1)},\ldots,\phi_p^{(1)}) \\
+\mathbf{\phi}^{(2)} &=& (\phi_1^{(2)},\ldots,\phi_p^{(2)}) \\
+\ldots & & \\
+\mathbf{\phi}^{(S)} &=& (\phi_1^{(S)},\ldots,\phi_p^{(S)}) \\
+\end{align}
+$$
+
+$$\,$$
+
+where each $\mathbf{\phi}^{(s)}$ depends on $\mathbf{\phi}^{(0)}, \ldots, \mathbf{\phi}^{(s-1)}$ only through $\mathbf{\phi}^{(s-1)}$.
+
+This is called the **Markov property** and so the sequence is called a **Markov chain**.
+
+
+# MCMC: Gibbs sampler
+
+Under conditions met for all models discussed in this course module, for any set $A$:
+
+$$\,$$
+
+$$P(\mathbf{\phi}^{(s)}\in A)\rightarrow\int_A p(\mathbf{\phi})d\mathbf{\phi}\;\mbox{ as }\; s\rightarrow\infty$$
+$$\,$$
+
+In other words, the sample distribution of $\mathbf{\phi}^{(s)}$ approaches the target distribution as $s\rightarrow\infty$ regardless of the starting value $\mathbf{\phi}^{(0)}$.
+
+
+# MCMC: Gibbs sampler
+
+More importantly
+
+$$\,$$
+
+$$\frac{1}{S}\sum_s g\left(\mathbf{\phi}^{(s)}\right)\rightarrow E[g(\mathbf{\phi})]=\int g(\mathbf{\phi})p(\mathbf{\phi})d\mathbf{\phi}\;\mbox{as }\;S\rightarrow\infty$$
+
+$$\,$$
+
+This means we can approximate $E[g(\mathbf{\phi})]$ with the sample average of $\left\{g(\mathbf{\phi}^{(1)}),\ldots,g(\mathbf{\phi}^{(S)})\right\}$ just as we did in Monte Carlo approximation.
+
+$$\,$$
+
+For this reason, we call such approximations **Markov Chain Monte Carlo (MCMC)**.
+
+
+#
+
+[end of STA6206 Bayesian Data analysis Session 4]
