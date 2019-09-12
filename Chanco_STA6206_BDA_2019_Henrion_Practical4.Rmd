@@ -85,38 +85,6 @@ colnames(countMat)<-c("no. children per mother","number of mothers")
 kable(countMat)
 ```
 
-# Exercise 2
-
-$$\,$$
-
-Fit the model from Practical 3, Exercise 2 using JAGS and the `rjags` package.
-
-$$\,$$
-
-Inspect the trace plot and plot the posterior distribution.
-
-$$\,$$
-
-Compute the posterior mean and the quantile-based 95% Bayesian confidence interval.
-
-
-# Exercise 3
-
-$$\,$$
-
-Fit the model from Practical 3, Exercise 3 using JAGS and the `rjags` package.
-Use this as the data from the sampling model:
-$$y=(1, 3, 2, 3, 0, 2, 6, 4, 4, 1, 1, 3, 2, 3, 1, 1, 3, 0)$$
-
-$$\,$$
-
-Inspect the trace plot and plot the posterior distribution.
-
-$$\,$$
-
-Compute the posterior mean and the quantile-based 95% Bayesian confidence interval.
-
-
 
 #
 
