@@ -1,5 +1,5 @@
 ---
-title: "STA6206 - Bayesian Data Analysis - Practical 5 (Solutions)"
+title: "STA6206 - Bayesian Data Analysis - Practical 5"
 author: "Marc Henrion"
 date: "13 September 2019"
 header-includes:
