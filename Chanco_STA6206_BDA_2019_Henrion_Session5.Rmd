@@ -1,0 +1,359 @@
+---
+title: "STA6206 - Bayesian Data Analysis - Session 5"
+author: "Marc Henrion"
+date: "13 September 2019"
+header-includes:
+   - \usepackage{amsmath}
+output:
+  powerpoint_presentation:
+    reference_doc: MlwChanco_Template.pptx
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = TRUE, fig.width=16, fig.height=9, dpi=300, highlight=T)
+
+require(tidyverse)
+require(knitr)
+require(gridExtra)
+require(kableExtra)
+
+require(HDInterval)
+```
+
+
+# Preliminaries
+
+* These notes were written in `R markdown`.
+
+* All examples / code in these notes is `R` and a combination of STAN / JAGS / BUGS for Bayesian model specification.
+
+* GitHub repository - will contain all course materials by the end of the week:
+
+  <https://github.com/gitMarcH/Chanco_STA6206>
+
+#
+
+## Session 5: Markov Chain Monte Carlo (cont'd)
+
+$$\,$$
+
+Some references for Bayesian statistics / data analysis are:
+
+1. Hoff, P.D. (2009). "*A First Course in Bayesian Statistical Methods*." Springer.
+
+2. Gelman, A., Carlin, J.B., Stern, H.S., Dunson, D.B., Vehtari, A., Rubin, D.B. (2014). "*Bayesian Data Analysis*". 3^rd^ ed. CRC Press.
+
+3. Ramoni, M., Sebastiani, P. (2007), 'Bayesian Methods', in Berthold, M., Hand, D.J. (eds.). "*Intelligent Data Analysis*", 2^nd^ ed., Springer, pp.131-168
+
+4. Stone, J.V. (2013). "*Bayes' Rule: A Tutorial Introduction to Bayesian Analysis*". Sebtel Press.
+
+
+# Notation
+
+* $X, Y, Z$ - random variables
+
+* $x, y, z$ - measured / observed values
+
+* $\bar{X}$, $\bar{Y}, \bar{Z}$ - sample mean estimators for X, Y, Z
+
+* $\bar{x}$, $\bar{y}, \bar{z}$ - sample mean estimates of X, Y, Z
+
+* $\hat{T}$, $\hat{t}$ - given a statistic T, estimator and estimate of T
+
+* $P(A)$ - probability of an event A occuring
+
+* $f_X(.)$, $f_Y(.), f_Z(.)$ - probability mass / density functions of X, Y, Z; sometimes $p_X(.)$ etc. rather than $f_X(.)$
+
+* p(.) - used as a shorthand notation for pmfs / pdfs if the use of this is unambiguous (i.e. it is clear which is the random variable) 
+
+* $X\sim F$ - X distributed according to distribution function F
+
+* $E[X]$, $E[Y]$, $E[Z]$, $E[T]$ - the expectation of X, Y, Z, T respectively
+
+
+#
+$$\,$$
+$$\,$$
+
+**MARKOV CHAIN MONTE CARLO (cont'd)**
+
+# MCMC: JAGS
+
+**Just another Gibbs sampler (JAGS)** is a program to simulate from Bayesian models using MCMC.
+
+It was devloped by Martyn Plummer, a biostatistician at WHO / IARC. JAGS is based on **Bayesian inference using Gibbs sampling (BUGS)** developed by the MRC Biostatistics Unit at Cambridge University and uses largely the same syntax.
+
+Unlike BUGS, JAGS is platform independent. It provides no user interface and has to be interacted with via other software such as `R` or Python.
+
+Common `R` libraries for this are `rjags` (developed by Plummer) and `R2jags`. The `coda` library is also needed.
+
+
+# MCMC: JAGS
+
+JAGS can be downloaded from [http://mcmc-jags.sourceforge.net/](http://mcmc-jags.sourceforge.net/).
+
+The user manual is (highly) recommended reading.
+
+[https://sourceforge.net/projects/mcmc-jags/files/Manuals/4.x/jags_user_manual.pdf/download](https://sourceforge.net/projects/mcmc-jags/files/Manuals/4.x/jags_user_manual.pdf/download)
+
+
+Note that JAGS coding syntax is very similar to `R` syntax but with some differences, particularly for specifying distribution functions (e.g. normal distribution takes mean and precision not mean and standard deviation).
+
+While JAGS mostly relies on the Gibbs sampler, it will actually try to figure out what is the best sampler to use for your problem. It will also use other samplers such as Metropolis-Hastings or Slicer...
+
+
+# MCMC: JAGS
+
+Fitting a JAGS model in `R` requires 3 things:
+
+$$\,$$
+
+1.  $\;$ Dataset.
+
+2.  $\;$ JAGS model file.
+
+3.  $\;$ `R` script to pre-process the data, call JAGS, process the resulting samples from the posterior density.
+
+
+# MCMC: JAGS
+
+**Example**
+
+$$\,$$
+
+Fit the model from Practical 3, Exercise 2 using JAGS and the `rjags` package.
+
+$$\,$$
+
+Inspect the trace plot and plot the posterior distribution.
+
+$$\,$$
+
+Compute the posterior mean and the quantile-based 95% Bayesian confidence interval.
+
+
+# MCMC: JAGS
+
+Write the following JAGS model into a file called `jagsS5ex1.jags`:
+
+    model{
+      # sampling model
+      for(i in 1:N){
+        y[i]~dbern(pi)
+      }
+      
+      # prior
+      pi~dbeta(2,3)
+    }
+    
+This specifies the model. Now we need to fit this model using MCMC.
+
+For this we use `R` and the `rjags` library.
+
+
+# MCMC: JAGS
+
+
+$$\,$$
+
+```{r, collapse=T, message=F, warning=F}
+library(rjags)
+
+set.seed(123)
+
+dat<-list(N=25,y=c(rep(1,16),rep(0,25-16))) # 25 observations, 16 of which are 1
+
+# specify the model
+jagsMod<-jags.model("jagsS5ex1.jags",data=dat,n.chains=4,n.adapt=1000)
+```
+
+
+# MCMC: JAGS
+
+$$\,$$
+
+```{r, collapse=T}
+# run some 'burn-in' samples
+update(jagsMod,1000)
+
+# extract samples from the posterior
+parsPosterior<-coda.samples(model=jagsMod,variable.names=c("pi"),n.iter=1e4,thin=10)
+# this chain is thinned just as an example
+# avoid thinning in practice
+
+# check trace plot, empirical posterior distribution, potential scale reduction factor
+plot(parsPosterior)
+gelman.diag(parsPosterior)
+
+# posterior mean estimate
+summary(parsPosterior)$statistics["Mean"]
+
+# posterior quantile based 95% credible interval
+summary(parsPosterior)$quantiles[c("2.5%","97.5%")]
+```
+
+
+# MCMC: burn-in
+
+MCMC algorithms usually take a few iterations (how many?) to move into the support region for a parameter. 
+
+We have seen that the Gibbs sampler is guaranteed to converge to the target distributions, but we said nothing about how long this would take.
+
+For this reason, the initial iterations (the **''burn-in''**) are generally discarded as they are not samples from the target distribution.
+
+How many to discard: depends on model, sampler, initial value...
+
+A **trace plot** can help to check if a longer burn-in is required.
+
+
+# MCMC: mixing
+
+It is important that the MCMC sampler explores the parameter space *efficiently*. We want to avoid iterations where the MCMC samples stay 'flat' in one region and also we want to avoid many steps in the same direction.
+
+To avoid that a single chain gets stuck in one part of the parameter space, we should run multiple chains and check that they all explore similar regions of the parameter space.
+
+
+# MCMC: auto-correlations / thinning
+
+We saw that MCMC chains are *dependent* sequences of samples -- there will be autocorrelations between samples. Autocorrelations should drop off rapidly with increasing lag.
+
+If not, a chain can be **thinned**: e.g. keep only every 10^th^ sample in the chain.
+
+Generally thinning only makes sense for storage requirements: a long chain will average out autocorrelations and this results in higher-precision estimates than when the chain is thinned.
+
+
+
+# MCMC: Diagnostics
+
+* **trace plot** - should look like a hairy caterpillar if the posterior has converged to the *stationary distribution*
+
+* **empirical posterior distributions** of parameters in the model (and compare to prior) - should look sensible
+
+* **potential scale reduction factor** (Gelman-Rubin's convergence diagnostic) - should be close to 1
+
+
+
+# MCMC: Alternatives to JAGS and alternatives to MCMC
+
+Alternatives to JAGS
+
+* Stan
+
+* Bayes-X
+
+* BUGS
+
+* ...
+
+Alternatives to MCMC
+
+* integrated nested Laplace approximation (INLA)
+
+
+
+#
+$$\,$$
+$$\,$$
+
+**EXAMPLE**
+
+# Example: Bayesian linear regression model
+
+Simulate the following data:
+
+```{r}
+set.seed(1309)
+
+N<-50
+
+x1<-rexp(N,rate=2)
+x2<-rnorm(N,mean=-2,sd=0.5)
+x3<-rpois(N,lambda=20)
+eps<-rnorm(N,mean=0,sd=0.75)
+
+y<-5+x1+0.1*x3+eps
+
+dat<-list(N=N,y=y,x1=x1,x2=x2,x3=x3)
+```
+
+# Example: Bayesian linear regression model
+
+Fit the following regression model using JAGS:
+
+$$\,$$
+
+$$Y=\beta_0+\beta_1 X_1+\beta_2 X_2+\beta_3 X_3+\epsilon$$
+
+$$\,$$
+
+where $\epsilon\sim\mathcal{N}(0,\sigma^2)$
+
+
+# Example: Bayesian linear regression model
+
+JAGS model file (`jagsS5ex2.jags`):
+
+    model{
+      for(i in 1:N){
+        y[i]~dnorm(yhat[i],tau)
+        yhat[i]<-b0+b1*x1[i]+b2*x2[i]+b3*x3[i]
+      }
+      b0~dnorm(0,0.0001)
+      b1~dnorm(0,0.0001)
+      b2~dnorm(0,0.0001)
+      b3~dnorm(0,0.0001)
+      tau<-pow(sigma,-2)
+      sigma~dunif(0,100)
+    }
+
+# Example: Bayesian linear regression model
+
+```{r, collapse=T}
+set.seed(123)
+
+jagsMod<-jags.model("jagsS5ex2.jags",data=dat,n.chains=4,n.adapt=1000)
+```
+
+# Example: Bayesian linear regression model
+
+```{r, collapse=T}
+# run some 'burn-in' samples
+update(jagsMod,1000)
+
+# extract samples from the posterior
+parsPosterior<-coda.samples(model=jagsMod,variable.names=c("b0","b1","b2","b3","sigma"),n.iter=1e4)
+# this chain is thinned just as an example
+# avoid thinning in practice
+
+# check trace plot, empirical posterior distribution, potential scale reduction factor
+par(mfrow=c(2,5))
+traceplot(parsPosterior)
+densplot(parsPosterior)
+gelman.diag(parsPosterior)
+```
+
+
+# Example: Bayesian linear regression model
+
+```{r, collapse=T}
+# posterior mean estimate
+summary(parsPosterior)$statistics[,"Mean"]
+
+# posterior quantile based 95% credible interval
+summary(parsPosterior)$quantiles[,c("2.5%","97.5%")]
+```
+
+
+# Example: Bayesian linear regression model
+
+Note that you can access all the individuals MCMC samples: `parsPosterior` is a list with 4 elements, 1 for each chain. Each element is simply a data frame with a column for every variable in the `variable.names` argument and the number of rows corresponds to `n.iter`/`thin`.
+
+Use this to produce your own trace and histogram plots, compute various statistics of the parameters etc!
+
+```{r, collapse=T}
+parsPosterior[[1]][1:10,]
+```
+
+#
+
+[end of STA6206 Bayesian Data analysis Session 5]
