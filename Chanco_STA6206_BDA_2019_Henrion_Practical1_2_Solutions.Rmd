@@ -729,7 +729,7 @@ Let's focus only on the terms inside the exponentials and let's ignore the facto
 
 $$\,$$
 
-$$\frac{1}{\sigma_0^2}(\mu^2-2\mu\mu_0+\mu_o^2)+\frac{1}{\sigma^2}(\sum_i y_i^2 - 2\mu\sum_i y_i +n\mu^2)=a\mu^2-2b\mu+c$$
+$$\frac{1}{\sigma_0^2}\left(\mu^2-2\mu\mu_0+\mu_o^2\right)+\frac{1}{\sigma^2}\left(\sum_i y_i^2 - 2\mu\sum_i y_i +n\mu^2\right)=a\mu^2-2b\mu+c$$
 
 $$\,$$
 
